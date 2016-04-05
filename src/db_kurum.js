@@ -1,3 +1,11 @@
+'use strict';
+
+var exception = require('kuark-istisna').Istisna,
+    _ = require('lodash'),
+    schema = require("kuark-schema"),
+    emitter = new (require('events').EventEmitter)(),
+    l = require('../lib/winstonConfig');
+
 /**
  * Kurum ekleme:
  *  HS > Kurumlar               : Tüm kurumları bu hash içinde tutacağız.
@@ -17,9 +25,9 @@ function DB_Kurum() {
 
     //region kurum kazanç trendi
     var f_db_kurum_kazanc_trendi = function (_tahta_id, _kurum_id, _para_id, _tarih1, _tarih2) {
-        l.info("f_db_kurum_kazanc_trendi")
+        console.log("f_db_kurum_kazanc_trendi")
 
-        return f_db_kurumun_teklifleri_detay(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2, true)
+        return f_db_kurumun_teklifleri_detay(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2, true)
             .then(function (_kazanan_teklifler) {
                 var arrTeklifler = _.map(_kazanan_teklifler, function (_elm) {
                     var ihale_tarihi = new Date(_elm.Ihale.IhaleTarihi),
@@ -41,7 +49,7 @@ function DB_Kurum() {
                     .map(function (value, key) {
                         return {
                             Key: key,
-                            Count: _.sum(_.pluck(value, "Toplam"))
+                            Count: _.sum(_.map(value, "Toplam"))
                         }
                     })
                     .value();
@@ -55,8 +63,8 @@ function DB_Kurum() {
      * Kuruma ait teklif olup olmadığını bulabiliriz. Bunun sonucunda temp oluşturulur, bu nedenle önce bu metod çağırılmalı
      * @param {integer} _tahta_id
      * @param {integer} _kurum_id
-     * @param {integer} _para_id
-     * @param {integer} _onay_id
+     * @param {integer=} _para_id
+     * @param {integer=} _onay_id
      * @returns {*}
      */
     var f_db_kurum_teklif_temp = function (_tahta_id, _kurum_id, _para_id, _onay_id) {
@@ -145,7 +153,8 @@ function DB_Kurum() {
                                 bArrUrunler: false,
                                 bKalemBilgisi: false,
                                 bIhaleBilgisi: false,
-                                bKurumBilgisi: false
+                                bKurumBilgisi: false,
+                                optUrun: {}
                             });
                             var db_teklif = require('./db_teklif');
                             return db_teklif.f_db_teklif_id(idler, _tahta_id, opts);
@@ -173,8 +182,8 @@ function DB_Kurum() {
         return f_db_kurumun_urune_verdigi_teklifler(_tahta_id, _kurum_id, _urun_id, _iAdet, _para_id, _onay_id, _tarih1, _tarih2)
             .then(function (_teklifler) {
                 return {
-                    Tarih: _.pluck(_teklifler, "Ihale.IhaleTarihi"),
-                    Fiyat: _.pluck(_teklifler, "Fiyat")
+                    Tarih: _.map(_teklifler, "Ihale.IhaleTarihi"),
+                    Fiyat: _.map(_teklifler, "Fiyat")
                 };
             });
     };
@@ -190,7 +199,7 @@ function DB_Kurum() {
      * @param {integer} _para_id
      * @param {integer} _tarih1
      * @param {integer} _tarih2
-     * @returns {*}
+     * @returns {Promise|{{ Tarih: integer[], Fiyat: integer[] }}}
      */
     var f_db_kurumun_teklif_verdigi_kalem_idler = function (_tahta_id, _kurum_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
 
@@ -240,10 +249,10 @@ function DB_Kurum() {
     var f_db_kurumun_teklif_verdigi_kalemler_toplami = function (_tahta_id, _kurum_id, _para_id) {
         //kurumun teklif_id lerini bul
         return result.dbQ.Q.all([
-            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id),
-            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id),
-            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id),
-            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id)
+            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id),
+            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id),
+            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id),
+            f_db_kurumun_teklif_verdigi_kalem_idler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id)
         ]).then(function (_arrPromises) {
             var sonuc = [];
             sonuc.push({Durumu: "Teklif", Toplam: _arrPromises[0].length});
@@ -311,6 +320,16 @@ function DB_Kurum() {
             });
     };
 
+    /**
+     *
+     * @param _tahta_id
+     * @param _kurum_id
+     * @param _onay_id
+     * @param _para_id
+     * @param _tarih1
+     * @param _tarih2
+     * @returns {Promise|{Key: integer, Count: integer }}
+     */
     var f_db_kurumun_ihale_gunlerine_gore_katildigi_ihale_toplamlari = function (_tahta_id, _kurum_id, _onay_id, _para_id, _tarih1, _tarih2) {
 
         //1 kurumun tekliflerini temp ile oluşturuyoruz
@@ -329,24 +348,33 @@ function DB_Kurum() {
         ]).then(function (_ress) {
             var ihale_idler = _ress[1];
 
-            return result.dbQ.hmget_json_parse(result.kp.ihale.tablo, ihale_idler)
-                .then(function (ihaleler) {
-                    if (ihaleler && ihaleler.length > 0) {
-                        var arr = _.map(ihaleler, function (_ihale) {
+            if (Array.isArray(ihale_idler)) {
 
-                            return (_onay_id && _onay_id > 0 && _onay_id != null && _onay_id != ""
-                                ?
-                                result.dbQ.sinter(
-                                    result.kp.ihale.ssetTeklifleri(_ihale.Id),
-                                    result.kp.temp.ssetTahtaKurumTeklifleri(_tahta_id, _kurum_id),
-                                    result.kp.teklif.ssetTeklifOnayDurumlari(_onay_id),
-                                    result.kp.teklif.ssetTeklifParaBirimli(_para_id))
-                                :
-                                result.dbQ.sinter(
-                                    result.kp.ihale.ssetTeklifleri(_ihale.Id),
-                                    result.kp.teklif.ssetTeklifParaBirimli(_para_id),
-                                    result.kp.temp.ssetTahtaKurumTeklifleri(_tahta_id, _kurum_id)))
-                                .then(function (_iteklif_idler) {
+                if (ihale_idler.length == 0) return [];
+
+                return result.dbQ.hmget_json_parse(result.kp.ihale.tablo, ihale_idler)
+                    .then(function (ihaleler) {
+
+                        if (Array.isArray(ihaleler)) {
+                            // Hiç ihale yok boş dizi dön
+                            if (ihaleler.length == 0) return [];
+
+                            // Tüm ihaleler için, teklifleri bağla
+                            var arr = ihaleler.map(function (_ihale) {
+
+                                return (_onay_id && _onay_id > 0 && _onay_id != null && _onay_id != ""
+                                        ?
+                                        result.dbQ.sinter(
+                                            result.kp.ihale.ssetTeklifleri(_ihale.Id),
+                                            result.kp.temp.ssetTahtaKurumTeklifleri(_tahta_id, _kurum_id),
+                                            result.kp.teklif.ssetTeklifOnayDurumlari(_onay_id),
+                                            result.kp.teklif.ssetTeklifParaBirimli(_para_id))
+                                        :
+                                        result.dbQ.sinter(
+                                            result.kp.ihale.ssetTeklifleri(_ihale.Id),
+                                            result.kp.teklif.ssetTeklifParaBirimli(_para_id),
+                                            result.kp.temp.ssetTahtaKurumTeklifleri(_tahta_id, _kurum_id))
+                                ).then(function (_iteklif_idler) {
                                     return {
                                         Key: _ihale.IhaleTarihi,
                                         Count: (_iteklif_idler && _iteklif_idler.length > 0)
@@ -354,41 +382,45 @@ function DB_Kurum() {
                                             : 0//2.2
                                     };
                                 });
-                        });
-                        return result.dbQ.Q.all(arr);
-                    } else {
-                        return [];
-                    }
-                });
+                            });
+                            return result.dbQ.Q.all(arr);
+                        }
 
+                        return [];
+                    });
+            }
         }).then(function (_result) {
 
             //3 buraya ihale tarihinde teklif atılmış ise teklif toplamları gelir
             //şimdi günlere göre gruplayarak tekliflerin toplamlarını sum ile hesaplamalıyız.
-            if (_result && _result.length > 0) {
+            if (Array.isArray(_result)) {
+                // Eğer dizi boşsa
+                if (_result.length == 0) return [];
+
+                // gruplanmış sonucu dön
                 var result = _.chain(_result)
                     .groupBy("Key")
                     .map(function (value, key) {
                         return {
                             Key: key,
-                            Count: _.sum(_.pluck(value, "Count"))
+                            Count: _.sum(_.map(value, "Count"))
                         }
                     })
                     .value();
                 return _.sortBy(result, "Key");//4
-            } else {
-                return [];
             }
+
+            return [];
         });
     };
 
     var f_db_kurumun_teklif_verdigi_ihaleler_toplami = function (_tahta_id, _kurum_id, _tarih1, _tarih2, _para_id) {
 
         return result.dbQ.Q.all([
-            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2),
-            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2),
-            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2),
-            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
+            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2),
+            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2),
+            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2),
+            f_db_kurumun_teklif_verdigi_ihaleler(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
 
         ]).then(function (_arrPromises) {
             var sonuc = [];
@@ -477,7 +509,8 @@ function DB_Kurum() {
                         bArrUrunler: false,
                         bKalemBilgisi: false,
                         bIhaleBilgisi: false,
-                        bKurumBilgisi: false
+                        bKurumBilgisi: false,
+                        optUrun: {}
                     });
                     var db_teklif = require('./db_teklif');
                     return db_teklif.f_db_teklif_id(_teklif_idler, _tahta_id, opts);
@@ -506,40 +539,40 @@ function DB_Kurum() {
 
             return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, _onay_durum_id, _para_id, _tarih1, _tarih2)
                 .then(function (_teklif_idler) {
-                    var durum = SABIT.ONAY_DURUM.teklif.whereX("Id", _onay_durum_id).KisaAdi;
+                    var durum = schema.SABIT.ONAY_DURUM.teklif.whereX("Id", _onay_durum_id).KisaAdi;
                     return [{Durumu: durum, Toplam: _teklif_idler.length}];
                 });
 
         } else {
             //tüm onay durumlarına göre teklif toplamlarını oluştur
 
-            return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2)
+            return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2)
                 .then(function (_teklif_idler) {
                     return [{Durumu: "Teklif", Toplam: _teklif_idler.length}];
                 })
                 .then(function (_arr) {
-                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2)
+                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2)
                         .then(function (_teklif_idler) {
                             _arr.push({Durumu: "Kazandı", Toplam: _teklif_idler.length});
                             return _arr;
                         });
                 })
                 .then(function (_arr) {
-                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2)
+                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2)
                         .then(function (_teklif_idler) {
                             _arr.push({Durumu: "Reddedildi", Toplam: _teklif_idler.length});
                             return _arr;
                         });
                 })
                 .then(function (_arr) {
-                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
+                    return f_db_kurumun_teklif_idleri(_tahta_id, _kurum_id, schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
                         .then(function (_teklif_idler) {
                             _arr.push({Durumu: "İhaleden Atıldı", Toplam: _teklif_idler.length});
                             return _arr;
                         });
                 })
                 .then(function (_arr) {
-                    l.info("oluşan arr>" + JSON.stringify(_arr));
+                    console.log("oluşan arr>" + JSON.stringify(_arr));
                     return _arr;
                 });
         }
@@ -569,7 +602,7 @@ function DB_Kurum() {
                 return db_urun.f_db_urun_id(_urun_idleri, _tahta_id, opt);
             })
             .fail(function (_err) {
-                l.info("HATA ALINDI " + _err);
+                console.log("HATA ALINDI " + _err);
                 return _err;
             });
     };
@@ -616,7 +649,6 @@ function DB_Kurum() {
                         l.e("Kurumlar çekilemedi. MULTI ERROR: " + err);
                         defer.reject(err);
                     }
-                    l.info("MULTI REPLY:" + replies);
 
                     if (_sayfalama) {
                         var baslangic = _sayfalama.Sayfa * _sayfalama.SatirSayisi,
@@ -647,13 +679,13 @@ function DB_Kurum() {
      * @returns {*}
      */
     var f_db_kurum_tumu = function (_tahta_id, _sayfalama) {
-        l.info("f_db_kurum_tumu");
+        console.log("f_db_kurum_tumu");
         return f_db_aktif_kurum_idleri(_tahta_id, _sayfalama)
             .then(function (_arrKurumId) {
                 var sonucAnahtari = _tahta_id && _tahta_id > 0
                         ? result.kp.temp.ssetTahtaKurum(_tahta_id)
                         : result.kp.temp.ssetKurum,
-                    sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
+                    sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
 
                 return _arrKurumId.length == 0
                     ? sonuc
@@ -693,23 +725,27 @@ function DB_Kurum() {
                 }
             }).then(function (_kurum_id) {
                 if (_kurum_id > 0) {
-                    l.info("çekilen kurum_id: " + _kurum_id);
+                    console.log("çekilen kurum_id: " + _kurum_id);
                     return result.f_db_kurum_id(_kurum_id);
                 }
             });
     };
 
+
     /**
      * Kurum bilgisini döner
-     * @param {integer|integer[]|string|string[]} kurum_id
+     * @param {integer|integer[]|string|string[]} _kurum_id
+     * @param {OptionsKurum} _opts
      * @returns {*}
      */
-    var f_db_kurum_id = function (kurum_id) {
+    var f_db_kurum_id = function (_kurum_id, _opts) {
         //kurumu buluyoruz
+        /** @type {OptionsKurum} */
+        var opts = result.OptionsKurum(_opts);
 
-        return (Array.isArray(kurum_id)
-            ? result.dbQ.hmget_json_parse(result.kp.kurum.tablo, kurum_id)
-            : result.dbQ.hget_json_parse(result.kp.kurum.tablo, kurum_id))
+        return (Array.isArray(_kurum_id)
+            ? result.dbQ.hmget_json_parse(result.kp.kurum.tablo, _kurum_id)
+            : result.dbQ.hget_json_parse(result.kp.kurum.tablo, _kurum_id))
             .then(function (_dbKurum) {
                 if (!_dbKurum) {
                     return null;
@@ -717,19 +753,30 @@ function DB_Kurum() {
                 } else {
 
                     var f_kurum_bilgisi = function (_kurum) {
+                        var defer = result.dbQ.Q.defer();
 
                         var /** @type {Kurum} */
-                        olusan_kurum = schema.f_create_default_object(SABIT.SCHEMA.KURUM);
+                        olusan_kurum = schema.f_create_default_object(schema.SCHEMA.KURUM);
 
-                        olusan_kurum = extend(olusan_kurum, _kurum);
-                        return olusan_kurum;
+                        olusan_kurum = _.extend(olusan_kurum, _kurum);
+
+                        var db_sehir = require('./db_sehir'),
+                            db_bolge = require('./db_bolge');
+
+                        result.dbQ.Q.all([
+                                opts.bSehir ? db_sehir.f_db_sehir_id(olusan_kurum.Sehir_Id) : null,
+                                opts.bBolge ? db_bolge.f_db_bolge_id(olusan_kurum.Bolge_Id) : null
+                            ])
+                            .then(function (_ress) {
+                                olusan_kurum.Sehir = _ress[0];
+                                olusan_kurum.Bolge = _ress[1];
+                                defer.resolve(olusan_kurum);
+                            });
+
+                        return defer.promise;
                     };
 
-                    if (Array.isArray(_dbKurum)) {
-                        return _dbKurum.map(f_kurum_bilgisi).allX()
-                    } else {
-                        return f_kurum_bilgisi(_dbKurum);
-                    }
+                    return (Array.isArray(_dbKurum) ? _dbKurum.map(f_kurum_bilgisi).allX() : f_kurum_bilgisi(_dbKurum));
                 }
             });
     };
@@ -769,36 +816,38 @@ function DB_Kurum() {
                             result.dbQ.hset(result.kp.kurum.tablo, _yeniKurumId, JSON.stringify(_kurum)),
                             result.dbQ.sadd(result.kp.kurum.ssetAdlari, _kurum.Adi)
                         ]).then(function () {
-                            /**
-                             * Ilerleyen zamanda bunu dbden çekerek eşsiz olacak şekilde gireceğim
-                             */
-                            if (_kurum.IlAdi) {
-                                result.dbQ.sadd(result.kp.sehir.ssetAdlari, _kurum.IlAdi);
-                            }
+                                //bölgeyi ekle
+                                //genel kurum ekleniyorsa bölgeyi kaydet
+                                if (!_tahta_id || _tahta_id == 0) {
+                                    if (_kurum.BolgeAdi) {
+                                        var db_bolge = require("./db_bolge");
+                                        return db_bolge.f_db_bolge_ekle(/** @type {Bolge} */{Id: 0, Adi: _kurum.BolgeAdi});
+                                    } else {
+                                        return _yeniKurumId;
+                                    }
+                                } else {
+                                    return _yeniKurumId;
+                                }
+                            })
+                            .then(function () {
+                                return _tahta_id && _tahta_id > 0
+                                    ? result.dbQ.sadd(result.kp.tahta.ssetOzelKurumlari(_tahta_id, true), _yeniKurumId)
+                                    : result.dbQ.sadd(result.kp.kurum.ssetGenel, _yeniKurumId);
+                            })
+                            .then(function () {
+                                return f_db_kurum_id(_yeniKurumId)
+                                    .then(function (_resKurum) {
+                                        console.log("tahta_id:" + _tahta_id);
+                                        console.log("kurum_id:" + _yeniKurumId);
 
-                            if (_kurum.BolgeAdi) {
-                                result.dbQ.sadd(result.kp.bolge.ssetAdlari, _kurum.BolgeAdi);
-                            }
-
-                            if (_kurum.UlkeAdi) {
-                                result.dbQ.sadd(result.kp.ulke.ssetAdlari, _kurum.UlkeAdi);
-                            }
-
-                            return 1;
-
-                        }).then(function () {
-                            return _tahta_id && _tahta_id > 0
-                                ? result.dbQ.sadd(result.kp.tahta.ssetOzelKurumlari(_tahta_id, true), _yeniKurumId)
-                                : result.dbQ.sadd(result.kp.kurum.ssetGenel, _yeniKurumId);
-                        }).then(function () {
-                            return f_db_kurum_id(_yeniKurumId)
-                                .then(function (_resKurum) {
-                                    emitter.emit(SABIT.OLAY.KURUM_EKLENDI, _resKurum, _yeniKurumId, _tahta_id, _kul_id);
-                                    return _resKurum;
-                                });
-                        }).fail(function (_err) {
-                            ssr = [{"Kurum ekleme hatalı > _err": _err}];
-                        });
+                                        emitter.emit(schema.SABIT.OLAY.KURUM_EKLENDI, _resKurum, _yeniKurumId, _tahta_id, _kul_id);
+                                        return _resKurum;
+                                    });
+                            })
+                            .fail(function (_err) {
+                                ssr = [{"Kurum ekleme hatalı > _err": _err}];
+                                throw new exception("Kurum eklenemedi", "Kurum eklenirken HATA ALINDI: " + _err)
+                            });
                     });
         };
 
@@ -844,29 +893,14 @@ function DB_Kurum() {
                             .then(function (_yeni_kurum_id) {
                                 _es_kurum.Id = _db_kurum.Id = _yeni_kurum_id;
 
-                                emitter.emit(SABIT.OLAY.KURUM_EKLENDI, _es_kurum, _tahta_id, _kul_id);
+                                emitter.emit(schema.SABIT.OLAY.KURUM_EKLENDI, _es_kurum, _tahta_id, _kul_id);
 
                                 return result.dbQ.hset(result.kp.kurum.tablo, _db_kurum.Id, JSON.stringify(_db_kurum))
                                     .then(function (_arrReply) {
                                         return result.dbQ.Q.all([
                                             result.dbQ.sadd(result.kp.tahta.ssetOzelKurumlari(_tahta_id, true), _yeni_kurum_id),
                                             result.dbQ.sadd(result.kp.kurum.ssetAdlari, _db_kurum.Adi)
-                                        ]).then(function (_res) {
-
-                                            if (_db_kurum.IlAdi) {
-                                                result.dbQ.sadd(result.kp.sehir.ssetAdlari, _db_kurum.IlAdi);
-                                            }
-
-                                            if (_db_kurum.BolgeAdi) {
-                                                result.dbQ.sadd(result.kp.bolge.ssetAdlari, _db_kurum.BolgeAdi);
-                                            }
-
-                                            if (_db_kurum.UlkeAdi) {
-                                                result.dbQ.sadd(result.kp.ulke.ssetAdlari, _db_kurum.UlkeAdi);
-                                            }
-
-                                            return 1;
-                                        });
+                                        ]);
                                     })
                                     .then(function () {
                                         return f_db_kurum_id(_yeni_kurum_id);
@@ -874,31 +908,18 @@ function DB_Kurum() {
                             });
                     }).fail(function (_err) {
                         console.error("Kurum ekleme işlemi başarılamadı..! HATA: " + _err);
-                        throw new exception.istisna("Kurum eklenemedi", "Kurum ekleme işlemi tamamlanamadı. Hata alındı:" + _err);
+                        throw new exception("Kurum eklenemedi", "Kurum ekleme işlemi tamamlanamadı. Hata alındı:" + _err);
                     });
                 } else {
                     //bu tahtaya ait özel kurumdur.
 
-                    emitter.emit(SABIT.OLAY.KURUM_GUNCELLENDI, _es_kurum, _tahta_id, _kul_id);
+                    emitter.emit(schema.SABIT.OLAY.KURUM_GUNCELLENDI, _es_kurum, _tahta_id, _kul_id);
 
                     //bu durumda son haliyle hset e ekle kendisini geri dön
                     return result.dbQ.hset(result.kp.kurum.tablo, _db_kurum.Id, JSON.stringify(_db_kurum))
                         .then(function () {
-                            result.dbQ.sadd(result.kp.kurum.ssetAdlari, _db_kurum.Adi);
-
-                            if (_db_kurum.IlAdi) {
-                                result.dbQ.sadd(result.kp.sehir.ssetAdlari, _db_kurum.IlAdi);
-                            }
-
-                            if (_db_kurum.BolgeAdi) {
-                                result.dbQ.sadd(result.kp.bolge.ssetAdlari, _db_kurum.BolgeAdi);
-                            }
-
-                            if (_db_kurum.UlkeAdi) {
-                                result.dbQ.sadd(result.kp.ulke.ssetAdlari, _db_kurum.UlkeAdi);
-                            }
-
-                            return 1;
+                            //kurum adını sete ekle
+                            return result.dbQ.sadd(result.kp.kurum.ssetAdlari, _db_kurum.Adi);
                         })
                         .then(function () {
                             return f_db_kurum_id(_db_kurum.Id);
@@ -930,7 +951,7 @@ function DB_Kurum() {
                 .then(function (_iGenel) {
                     if (_iGenel == 1) {
                         //genel kurum silinemez
-                        throw new exception.istisna("Kurum Silinemedi!", "Silinmek istenen kurum GENEL kurumlar içerisinde kayıtlı olduğu için işlem tamamlanamadı!");
+                        throw new exception("Kurum Silinemedi!", "Silinmek istenen kurum GENEL kurumlar içerisinde kayıtlı olduğu için işlem tamamlanamadı!");
 
                     } else {
                         //özel kurum silinebilir
@@ -939,7 +960,7 @@ function DB_Kurum() {
                             result.dbQ.sadd(result.kp.tahta.ssetOzelKurumlari(_tahta_id, false), _kurum_id)
 
                         ]).then(function () {
-                            emitter.emit(SABIT.OLAY.KURUM_SILINDI, _kurum_id, _tahta_id, _kul_id);
+                            emitter.emit(schema.SABIT.OLAY.KURUM_SILINDI, _kurum_id, _tahta_id, _kul_id);
 
                             //kurumun tekliflerini bul ve sil
                             return result.dbQ.smembers(result.kp.kurum.ssetTeklifleri(_kurum_id))
@@ -959,7 +980,7 @@ function DB_Kurum() {
 
         } else {
             l.e("Silinecek kurum bilgisi bulunamadı");
-            throw new exception.istisna("Kurum Silinemedi!", "Silinmek istenen kurum bulunamadı! Tekrar deneyiniz.");
+            throw new exception("Kurum Silinemedi!", "Silinmek istenen kurum bulunamadı! Tekrar deneyiniz.");
         }
     };
 
@@ -996,7 +1017,7 @@ function DB_Kurum() {
      * @returns {*}
      */
     var f_db_kurum_paylas = function (_paylas) {
-        l.info("f_db_kurum_paylas");
+        console.log("f_db_kurum_paylas");
         /**
          *
          * @param {integer|integer[]} _to
@@ -1037,7 +1058,7 @@ function DB_Kurum() {
     var f_db_tahta_kurum_gizlenen_sil = function (_tahta_id, _kurum_id) {
         return result.dbQ.srem(result.kp.tahta.ssetGizlenenKurumlari(_tahta_id), _kurum_id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.KURUM_GIZLENDI, _kurum_id, _tahta_id);
+                emitter.emit(schema.SABIT.OLAY.KURUM_GIZLENDI, _kurum_id, _tahta_id);
                 return _kurum_id;
             });
     };
@@ -1050,7 +1071,7 @@ function DB_Kurum() {
     var f_db_tahta_kurum_gizlenen_ekle = function (_tahta_id, _kurum_id) {
         return result.dbQ.sadd(result.kp.tahta.ssetGizlenenKurumlari(_tahta_id), _kurum_id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.KURUM_GIZLENDI, _kurum_id, _tahta_id);
+                emitter.emit(schema.SABIT.OLAY.KURUM_GIZLENDI, _kurum_id, _tahta_id);
                 return _kurum_id;
             });
     };
@@ -1090,7 +1111,7 @@ function DB_Kurum() {
 
                 ]).then(function (_ress) {
 
-                    var sonuc = schema.f_create_default_object(SABIT.SCHEMA.GRAFIK_DONUT);
+                    var sonuc = schema.f_create_default_object(schema.SCHEMA.GRAFIK_DONUT);
                     var gecerli = parseInt(_ress[0].length || 0),
                         toplam = parseInt(_ress[1] || 0);
                     sonuc.Toplam = toplam;
@@ -1138,7 +1159,19 @@ function DB_Kurum() {
         f_db_kurum_guncelle: f_db_kurum_guncelle,
         f_db_kurum_sil: f_db_kurum_sil,
         f_db_kurum_tahta_aktif: f_db_kurum_tahta_aktif,
-        f_db_kurum_paylas: f_db_kurum_paylas
+        f_db_kurum_paylas: f_db_kurum_paylas,
+        /**
+         *
+         * @param opts - Ezilecek değerleri taşıyan nesne
+         * @returns {OptionsKurum}
+         */
+        OptionsKurum: function (opts) {
+            /** @class OptionsKurum */
+            return _.extend({
+                bSehir: true,
+                bBolge: true
+            }, opts || {})
+        }
     };
 
     return result;

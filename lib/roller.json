@@ -1,0 +1,304 @@
+{
+  "data": [
+    {
+      "Id": 0,
+      "Adi": "Admin",
+      "Yetki": {
+        "firma": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": true,
+          "h": true
+        },
+        "urun": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": true,
+          "h": null
+        },
+        "ihale": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": true,
+          "h": true
+        },
+        "kalem": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": true
+        },
+        "kalemDurum": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": null,
+          "s": null,
+          "h": null
+        },
+        "teklif": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "uye": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "uyeRolleri": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": null,
+          "s": null,
+          "h": null
+        },
+        "rol": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "davet": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "uyari": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "tahta": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "haber": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "ajanda": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "ajandaYetki": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "anahtar": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "bolge": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "sehir": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        }
+      }
+    },
+    {
+      "Id": 0,
+      "Adi": "Guest",
+      "Yetki": {
+        "firma": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": false,
+          "h": false
+        },
+        "urun": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": false,
+          "h": null
+        },
+        "ihale": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": false,
+          "h": false
+        },
+        "kalem": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "kalemDurum": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": null,
+          "s": null,
+          "h": null
+        },
+        "teklif": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "uye": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "uyeRolleri": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": null,
+          "s": null,
+          "h": null
+        },
+        "rol": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "davet": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "uyari": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "tahta": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "haber": {
+          "c": true,
+          "r": true,
+          "u": true,
+          "d": true,
+          "s": null,
+          "h": null
+        },
+        "ajanda": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "ajandaYetki": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "anahtar": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "bolge": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        },
+        "sehir": {
+          "c": false,
+          "r": true,
+          "u": false,
+          "d": false,
+          "s": null,
+          "h": null
+        }
+      }
+    }
+  ]
+}

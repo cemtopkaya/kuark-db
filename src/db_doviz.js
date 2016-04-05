@@ -1,3 +1,15 @@
+'use strict';
+
+/**
+ *
+ * @type {DBDoviz}
+ */
+var obj = DB_Doviz();
+
+obj.__proto__ = require('./db_log');
+module.exports = obj;
+
+
 /**
  *
  * @returns {DBDoviz}
@@ -5,60 +17,57 @@
  */
 function DB_Doviz() {
     var sql = require('mssql'),
-        /**
-         *
-         * @type {DBDoviz}
-         */
-        result = {};
+        /** @type {DBDoviz} */
+        result = {},
+        schema = require('kuark-schema'),
+        extensions= require('kuark-extensions');
 
-    var f_db_doviz_kurlari_cek = function (_adet, _iKurDeger_id) {
+    function f_db_doviz_kurlari_cek(_adet, _iKurDeger_id) {
 
-        var defer = result.dbQ.Q.defer();
-        _adet = !_adet ? 100 : _adet;
+        var defer = result.dbQ.Q.defer(),
+            config = {
+                user: 'sa',
+                password: 'q1w2.e3r4',
+                server: '10.130.214.201', // You can use 'localhost\\instance' to connect to named instance
+                database: 'medula_v3'
+            },
+            adet = _adet ? _adet : 100,
+            connection = sql.connect(config, function (err) {
+                if (err) {
+                    extensions.ssr = [{"Hatalı SQL bağlantısı": JSON.stringify(err, null, ' ')}];
+                    defer.reject(err);
 
-        var config = {
-            user: 'sa',
-            password: 'q1w2.e3r4',
-            server: '10.130.214.201', // You can use 'localhost\\instance' to connect to named instance
-            database: 'medula_v3'
-        };
+                } else {
 
-        var connection = sql.connect(config, function (err) {
-            if (err) {
-                console.error(JSON.stringify(err, null, ' '));
-                defer.reject(err);
-
-            } else {
-
-                // Query
-                var request = connection.request();
-                /*  var sorgu = _adet == 0
-                 ? "SELECT * FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ORDER BY kurdeger_id DESC"
-                 //: "SELECT TOP(" + _adet + ")* FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ORDER BY kurdeger_id DESC";
-                 : "SELECT TOP(" + _adet + ")* FROM KurDegerleri WHERE [refParaBirim_id]=1 and refKurTipi_id=4 ORDER BY kurdeger_id DESC";*/
+                    // Query
+                    var request = connection.request();
+                    /*  var sorgu = _adet == 0
+                     ? "SELECT * FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ORDER BY kurdeger_id DESC"
+                     //: "SELECT TOP(" + _adet + ")* FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ORDER BY kurdeger_id DESC";
+                     : "SELECT TOP(" + _adet + ")* FROM KurDegerleri WHERE [refParaBirim_id]=1 and refKurTipi_id=4 ORDER BY kurdeger_id DESC";*/
 
 
-                var sorgu = _adet == 0
-                    ? "SELECT * "
-                    : "SELECT TOP(" + _adet + ")* ";
-                sorgu += " FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ";
-                sorgu += _iKurDeger_id && _iKurDeger_id > 0 ? " AND kurdeger_id > " + _iKurDeger_id : " ";
-                sorgu += " AND YEAR(kurTarihi)>=2015 ";//2015 ve sonrasını çekmek yeterli olacaktır
-                sorgu += " ORDER BY kurdeger_id DESC";
+                    var sorgu = adet == 0
+                        ? "SELECT * "
+                        : "SELECT TOP(" + adet + ")* ";
+                    sorgu += " FROM KurDegerleri WHERE refParaBirim_id IN (1,3) ";
+                    sorgu += _iKurDeger_id && _iKurDeger_id > 0 ? " AND kurdeger_id > " + _iKurDeger_id : " ";
+                    sorgu += " AND YEAR(kurTarihi)>=2015 ";//2015 ve sonrasını çekmek yeterli olacaktır
+                    sorgu += " ORDER BY kurdeger_id DESC";
 
-                request.query(sorgu,
-                    function (err, recordset) {
-                        if (err) {
-                            defer.reject("Kurlar çekilemedi! " + JSON.stringify(err));
-                        } else {
-                            defer.resolve(recordset);
-                        }
-                    });
-            }
-        });
+                    request.query(sorgu,
+                        function (err, recordset) {
+                            if (err) {
+                                defer.reject("Kurlar çekilemedi! " + JSON.stringify(err));
+                            } else {
+                                defer.resolve(recordset);
+                            }
+                        });
+                }
+            });
 
         return defer.promise;
-    };
+    }
 
     /**
      * Önce sistemde kayıt olup olmadığı kontrol edilir,
@@ -67,7 +76,7 @@ function DB_Doviz() {
      * @param {int} _adet
      * @returns {*}
      */
-    var f_db_doviz_kurlari_cek_ekle = function (_adet) {
+    function f_db_doviz_kurlari_cek_ekle(_adet) {
 
         return f_db_son_kur_deger_id()
             .then(function (_iLast) {
@@ -75,10 +84,10 @@ function DB_Doviz() {
                 return f_db_doviz_kurlari_cek(_adet, id)
                     .then(f_db_doviz_kurlari_ekle);
             });
-    };
+    }
 
 
-    var f_db_doviz_kurlari_ekle = function (_dovizKurlari) {
+    function f_db_doviz_kurlari_ekle(_dovizKurlari) {
         var mapDoviz = new Map();
 
         if (Array.isArray(_dovizKurlari) && !_dovizKurlari.length) {
@@ -87,7 +96,7 @@ function DB_Doviz() {
         var iMaxKur_id = _dovizKurlari[0].kurDeger_id;
         _dovizKurlari.forEach(function (_elm) {
 
-            var kur = schema.f_create_default_object(SABIT.SCHEMA.DOVIZ_KURU);
+            var kur = schema.f_create_default_object(schema.SCHEMA.DOVIZ_KURU);
             kur.Id = _elm.kurDeger_id;
             kur.ParaBirim_Id = _elm.refParaBirim_id;
             kur.KurTipi_Id = _elm.refKurTipi_id;
@@ -116,24 +125,24 @@ function DB_Doviz() {
                         return _dovizKurlari;
                     });
             });
-    };
+    }
 
     /**
      * Vt de kayıtlı son kurdeger_id değerini verir.
      * @returns {*}
      */
-    var f_db_son_kur_deger_id = function () {
+    function f_db_son_kur_deger_id() {
         return result.dbQ.get(result.kp.doviz.idx);
-    };
+    }
 
-    var f_db_doviz_tarih_araligindaki_kurlari_getir = function (_paraBirim_id, _kurTipi_id, _tarih1, _tarih2) {
+    function f_db_doviz_tarih_araligindaki_kurlari_getir(_paraBirim_id, _kurTipi_id, _tarih1, _tarih2) {
         return result.dbQ.zrangebyscore(result.kp.doviz.zsetKurlari(_paraBirim_id, _kurTipi_id), _tarih1, _tarih2)
             .then(function (_arrKurlar) {
                 return _arrKurlar.map(function (_elm) {
                     return JSON.parse(_elm);
                 });
             });
-    };
+    }
 
     /**
      * @class DBDoviz
@@ -148,13 +157,3 @@ function DB_Doviz() {
 
     return result;
 }
-
-
-/**
- *
- * @type {DBDoviz}
- */
-var obj = DB_Doviz();
-obj.__proto__ = require('./db_log');
-
-module.exports = obj;

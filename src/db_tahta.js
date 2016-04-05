@@ -1,3 +1,13 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    schema = require('kuark-schema'),
+    exception = require('kuark-istisna'),
+    emitter = new (require('events').EventEmitter)(),
+    extensions = require('kuark-extensions'),
+    _ = require('lodash');
+
+
 /**
  * Tüm tahta işlemleri
  * <pre>
@@ -60,7 +70,7 @@ function DB_Tahta() {
         ]).then(function (_ress) {
 
             /** @type {GrafikDonut} */
-            var sonuc = schema.f_create_default_object(SABIT.SCHEMA.GRAFIK_DONUT);
+            var sonuc = schema.f_create_default_object(schema.SCHEMA.GRAFIK_DONUT);
             var toplam = parseInt(_ress[0].length || 0),
                 gecerli = parseInt(_ress[1].length || 0);
             sonuc.Toplam = toplam;
@@ -82,8 +92,7 @@ function DB_Tahta() {
                     return result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id));
 
                 } else {
-                    var db_ihale = require("./db_ihale");
-                    return db_ihale.f_db_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id)
+                    return f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id)
                         .then(function () {
                             return result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id));
                         });
@@ -98,15 +107,13 @@ function DB_Tahta() {
      * @returns {*}
      */
     var f_indekslenen_ve_takip_edilen_ihale_idleri = function (_tahta_id) {
-        console.log("f_indekslenen_ve_takip_edilen_ihale_idleri")
         return result.dbQ.Q.all([
             f_db_tahta_ihale_indeksli_idler(_tahta_id),
             f_db_tahta_ihale_takip_idler(_tahta_id)
         ]).then(function (_ress) {
-            console.log("_ress")
-            console.log(JSON.stringify(_ress))
+            console.log("indekslenen_ve_takip_edilen_ihale_idleri SONUCU:");
+            console.log(JSON.stringify(_ress));
             var indexliler = _ress[0],
-            //tahtanin_gorebilecegi=_ress[1],
                 takiptekiler = _ress[1];
 
             return _.union(indexliler, takiptekiler);
@@ -140,7 +147,7 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_rapor_bilgileri = function (_tahta_id) {
+    var f_db_tahta_ihale_rapor_bilgileri = function (_tahta_id, _arama) {
         console.log("f_db_tahta_ihale_rapor_bilgileri");
 
         /*return f_indekslenen_ve_takip_edilen_kalem_idler(_tahta_id)
@@ -173,17 +180,17 @@ function DB_Tahta() {
             .then(function (_ihale_idler) {
                 console.log("_ihale_idler>" + _ihale_idler);
 
-                if (_ihale_idler && _ihale_idler.length > 0) {
+                if (Array.isArray(_ihale_idler) && _ihale_idler.length > 0) {
                     /** @type {OptionsIhale} */
                     var opts = {
-                        bArrKalemleri: true,
+                        bArrKalemleri: false,
                         bYapanKurum: true,
-                        bTakip: true,
-                        optsKalem: {
-                            bArrTeklifleri: true,
-                            bTakiptemi: true,
-                            bOnayDurumu: true
-                        }
+                        bTakip: true
+                        /*  optsKalem: {
+                         bArrTeklifleri: true,
+                         bTakiptemi: true,
+                         bOnayDurumu: true
+                         }*/
                     };
                     var db_ihale = require("./db_ihale");
                     return db_ihale.f_db_ihale_id(_ihale_idler, _tahta_id, opts);
@@ -195,13 +202,13 @@ function DB_Tahta() {
 
     //endregion
 
-    //region INDEX
+    //region INDEKS İHALE
 
     /**
      * tahtanın anahtar kelimelerine göre indeksli ihaleleri getir
      * @param {integer} _tahta_id
      * @param {OptionsIhale=} _opts
-     * @returns {*}
+     * @returns {Promise} AnahtarKelime[]
      */
     var f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore = function (_tahta_id, _opts) {
         var db_ihale = require("./db_ihale");
@@ -219,21 +226,18 @@ function DB_Tahta() {
     };
 
     var f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore = function (_tahta_id) {
-        var db_tahta = require('./db_tahta');
+        var db_ihale = require('./db_ihale');
         return result.dbQ.exists(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))
             .then(function (_dbReply) {
                 return _dbReply
                     ? result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id)) // Sonuç setini çekelim
-                    : db_tahta.f_db_tahta_anahtar_tumu(_tahta_id)
+                    : f_db_tahta_anahtar_tumu(_tahta_id)
                     .then(function (_arrKelimeler) {
 
                         if (_arrKelimeler.length == 0) {
                             l.warn("anahtarlar boş geldiği için ihale id gönderemiyoruz");
                             return [];
                         }
-
-                        /*return result.dbQ.hmget_array(result.kp.anahtar.tablo, _arrKelimeler)
-                         .then(function (_anahtarIdleri) {*/
 
                         var _anahtarIdleri = _arrKelimeler.pluckX("Id");
 
@@ -244,16 +248,15 @@ function DB_Tahta() {
 
                         arrAnahtarlarinSetAdlari.unshift(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id)); // ["temp:tahta:401:A:ihale", "a:1:ihale", "a:2:ihale", ..]
 
-                        return f_db_tahta_ihale_idler_aktif(_tahta_id)
+                        return db_ihale.f_db_tahta_ihale_idler_aktif(_tahta_id)
                             .then(result.dbQ.sunionstore_array(arrAnahtarlarinSetAdlari)) // Anahtar kelimelerin geçtiği ihaleler
                             .then(result.dbQ.sinterstore_array(arrInterStore_sonuc)) // Anahtar kelimlerin geçtiği, tahtanın görebileceği aktif public/private ihaleler
                             .then(result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))); // Sonuç setini çekelim
                         //});
                     })
                     .fail(function (_err) {
-                        var hata = "indeksli ihaleleri çekilirken hata oluştu: " + JSON.stringify(_err);
-                        l.e(hata);
-                        return hata;
+                        var hata = "indeksli ihaleleri çekilirken hata oluştu: " + _err;
+                        throw new exception.Istisna("İndeksli ihaleler çekilemedi", hata);
                     });
             })
             .then(function () {
@@ -267,12 +270,13 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      */
     var f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali = function (_tahta_id) {
+        console.log("f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali");
         return f_db_tahta_ihale_indeksli_idler(_tahta_id)
             .then(function () {
                 return result.dbQ.exists(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id))
                     .then(function (_iExist) {
                         return _iExist == 1
-                            ? []
+                            ? 1
                             : (result.dbQ.zinterstore(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), 2,
                             result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id),
                             result.kp.ihale.zsetYapilmaTarihi));
@@ -307,7 +311,7 @@ function DB_Tahta() {
                     : result.dbQ.zrevrangebyscore(sonucAnahtari, "+inf", "-inf", "LIMIT", baslangic, bitis))
                     .then(function (_ihale_idler) {
 
-                        var sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
+                        var sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
                         sonuc.ToplamKayitSayisi = _ihale_idler.length;
 
                         if (_ihale_idler && _ihale_idler.length > 0) {
@@ -330,35 +334,40 @@ function DB_Tahta() {
      * İndekslenmiş ihalelerin detaylarını getirir
      * Tarihi geçen:       10
      * Teklif verilebilir: 90 gibi değerleri döneceğiz
-     * @param _tahta_id
+     * @param {integer} _tahta_id
+     * @returns {{Toplam: integer, Gecerli: integer, Gecersiz:integer}}
      */
     var f_db_tahta_ihale_indeksli_toplami = function (_tahta_id) {
-        console.log("f_db_ihale_indeksli_toplami")
         return f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
             .then(function () {
+                /**
+                 * önce tüm sıralı indekslenen ihale sayısı
+                 * sonra da işlem yapılan tarihten (bugun) itibaren ihale sayısını buluyoruz
+                 * 1. bulduklarımız tüm ihale sayısını
+                 * 2.si ise tarihi geçmemiş teklif verilebilir ihale sayısını getirir
+                 */
+
                 return result.dbQ.Q.all([
-                    result.dbQ.zcount(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), "-inf", "+inf"),
-                    result.dbQ.zcount(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), new Date().getTime(), "+inf")
+                    result.dbQ.zcount(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), "-inf", "+inf"),//1
+                    result.dbQ.zcount(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), new Date().getTime(), "+inf")//2
                 ]).then(function (_results) {
-                    console.log("_results")
-                    console.log(JSON.stringify(_results));
+                    console.log("_results>" + JSON.stringify(_results));
 
                     var toplam = parseInt(_results[0] || 0),
                         gecerli = parseInt(_results[1] || 0);
 
-                    var sonuc = {
+                    return {
                         Toplam: toplam,
                         Gecerli: gecerli,
                         Gecersiz: toplam - gecerli
                     };
-                    return sonuc;
                 });
             });
     };
 
     //endregion
 
-    //region TAHTANIN GİZLENENLERİ
+    //region TAHTANIN GİZLENEN İHALELERİ
 
     /**
      * Kullanıcı tahtada görmek istemediği ihalelerin listesini ihale bilgileriyle dönüyoruz.
@@ -405,7 +414,7 @@ function DB_Tahta() {
 
                 ]).then(function (_ress) {
                     /** @type {GrafikDonut} */
-                    var sonuc = schema.f_create_default_object(SABIT.SCHEMA.GRAFIK_DONUT);
+                    var sonuc = schema.f_create_default_object(schema.SCHEMA.GRAFIK_DONUT);
                     var gecerli = parseInt(_ress[0].length || 0),
                         toplam = parseInt(_ress[1] || 0);
 
@@ -435,10 +444,10 @@ function DB_Tahta() {
     };
 
     var f_db_tahta_ajandasi = function (_tahta_id) {
-        return result.dbQ.hget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id)
-            .then(function (_res) {
-                return _res || {};
-            });
+        return (Array.isArray(_tahta_id)
+            ? result.dbQ.hmget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id)
+            : result.dbQ.hget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id));
+
     };
     //endregion
 
@@ -450,7 +459,7 @@ function DB_Tahta() {
      * HSET  tahta:401:uye  eposta  [1,3,4]
      * </pre>
      * @param {Integer} _tahta_id
-     * @param {{EPosta:String, Roller:Integer[]}} _yetkisiyleDavetli
+     * @param {{EPosta:String, Roller:Integer[], UID:string}} _yetkisiyleDavetli
      */
     var f_db_tahta_davet_ekle = function (_tahta_id, _yetkisiyleDavetli) {
         /**
@@ -472,8 +481,6 @@ function DB_Tahta() {
     var f_db_tahta_davet_eposta = function (_tahta_id, _davet_id, _eposta) {
         return f_db_tahta_davet(_tahta_id, _davet_id)
             .then(function (_davet) {
-                ssg = [{"_davet": _davet}];
-
                 if (_davet && _davet.EPosta == _eposta) {
                     return _davet;
                 } else {
@@ -490,6 +497,12 @@ function DB_Tahta() {
     var f_db_tahta_davet = function (_tahta_id, _davetId) {
         return result.dbQ.hget_json_parse(result.kp.tahta.hsDavetler(_tahta_id), _davetId);
     };
+
+    /**
+     *
+     * @param _tahta_id
+     * @returns {Promise}
+     */
     var f_db_tahta_davetleri = function (_tahta_id) {
         return result.dbQ.hvals_json_parse(result.kp.tahta.hsDavetler(_tahta_id));
     };
@@ -509,13 +522,17 @@ function DB_Tahta() {
 
         return f_db_tahta_davetleri(_tahta_id)
             .then(function (_arrObjectDavetler) {
-                console.log("tüm davetler");
-                console.log(JSON.stringify(_arrObjectDavetler));
-                var davet = _arrObjectDavetler.whereXU({"EPosta": _eposta});
+                if (_arrObjectDavetler && _arrObjectDavetler.length > 0) {
+                    console.log("tüm davetler");
+                    console.log(JSON.stringify(_arrObjectDavetler));
+                    var davet = _arrObjectDavetler.whereXU({"EPosta": _eposta});
 
-                return (davet.length > 0) ?
-                    result.dbQ.hdel(result.kp.tahta.hsDavetler(_tahta_id), davet[0].UID) :
-                    null;
+                    return (davet.length > 0) ?
+                        result.dbQ.hdel(result.kp.tahta.hsDavetler(_tahta_id), davet[0].UID) :
+                        null;
+                }else{
+                    return null;
+                }
             });
     };
     //endregion
@@ -543,7 +560,7 @@ function DB_Tahta() {
      */
     var f_db_tahta_uye_ekle = function (_tahta_id, _yetkisiyleKullanici) {
         //üye eklenirken kullanıcı:x:tahtalari:uye tablosuna ve tahta:v:uye tablosuna kayıt ekliyoruz
-        ssg = [{"_yetkisiyleKullanici": _yetkisiyleKullanici}];
+
         return result.dbQ.Q.all([
             result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _yetkisiyleKullanici.Kullanici_Id, JSON.stringify(_yetkisiyleKullanici.Roller)),
             result.dbQ.sadd(result.kp.kullanici.ssetUyeOlduguTahtalari(_yetkisiyleKullanici.Kullanici_Id, true), _tahta_id)
@@ -559,7 +576,7 @@ function DB_Tahta() {
         return result.dbQ.sismember(result.kp.kullanici.ssetSahipOlduguTahtalari(_uye_id, true), _tahta_id)
             .then(function (_iSahip) {
                 if (_iSahip == 1) {
-                    throw new exception.istisna("Üye silinemedi!", "Silinmek istenen üye tahtanın sahibi olduğu için işlem gerçekleştirilemez!");
+                    throw new exception.Istisna("Üye silinemedi!", "Silinmek istenen üye tahtanın sahibi olduğu için işlem gerçekleştirilemez!");
                 } else {
                     return result.dbQ.Q.all([
                         result.dbQ.srem(result.kp.kullanici.ssetUyeOlduguTahtalari(_uye_id, true), _tahta_id),
@@ -577,27 +594,16 @@ function DB_Tahta() {
      * @returns {Promise}
      */
     var f_db_tahta_uyeleri = function (_tahta_id, _opts) {
-
-        var /** @type {DBKullanici} */
-            kullanici = require('./db_kullanici'),
-            /** @type {OptionsUye} */
-            opts = kullanici.OptionsUye(_opts);
-
+        var db_kullanici = require('./db_kullanici');
         console.log("f_db_tahta_uyeleri: _tahta_id> " + _tahta_id);
         return f_db_aktif_tahta_uye_idleri(_tahta_id)
             .then(function (_aktifIdleri) {
-                l.i("_aktifKullaniciIdleri: ", JSON.stringify(_aktifIdleri));
-
-                return _aktifIdleri
-                    .mapX(null, kullanici.f_db_uye_id, _tahta_id, opts)
-                    .allX()
-                    .then(function (_uyeler) {
-                        return _uyeler;
-                    })
+                return db_kullanici.f_db_uye_id(_aktifIdleri, _tahta_id, _opts);
             })
             .fail(function (_err) {
                 console.log("HATAAA: " + _err);
                 ssr = [{"f_db_tahta_uyeleri fail": _err}];
+                throw _err;
             });
     };
 
@@ -657,7 +663,11 @@ function DB_Tahta() {
                     : result.dbQ.smembers(sonucAnahtari))
                     .then(function (_aktif_idleri) {
                         return _aktif_idleri.mapX(null, parseInt);
-                    });
+                    })
+                    .fail(function (_err) {
+                        console.error("Hata var:", _err);
+                        throw _err;
+                    })
             });
     }
 
@@ -674,66 +684,58 @@ function DB_Tahta() {
 
     /**
      * ID si verilmiş tahta nesnesini döner
-     * @param {integer} _tahta_id
+     * @param {integer|integer[]|string|string[]} _tahta_id
      * @param {OptionsTahta=} _opts, Tahtanın hangi bilgilerini istiyorsak seçebiliriz
      * @returns {Promise}
      */
     function f_db_tahta_id(_tahta_id, _opts) {
-        var rol = require('./db_rol'),
-            kurum = require('./db_kurum');
-
-        /* if (_opts && typeof _opts !== "object") {
-         l.e("_opts", JSON.stringify(_opts));
-         throw "f_db_tahta_id fonksiyonunda tahta detaylarını belirleyeceğiniz ikinc parametre obje olmalı.";
-         }*/
 
         /** @type {OptionsTahta} */
         var opts = result.OptionsTahta(_opts);
 
-        return result.dbQ.hget_json_parse(result.kp.tahta.tablo, _tahta_id)
-            .then(
-                /**
-                 *
-                 * @param {TahtaGenel} _tahta
-                 * @returns {*}
-                 */
-                function (_tahta) {
-                    if (!_tahta) {
-                        return null;
-                    }
+        return (Array.isArray(_tahta_id)
+            ? result.dbQ.hmget_json_parse(result.kp.tahta.tablo, _tahta_id)
+            : result.dbQ.hget_json_parse(result.kp.tahta.tablo, _tahta_id))
+            .then(function (_dbTahta) {
+                if (!_dbTahta) {
+                    return null;
+                }
 
+                var rol = require('./db_rol'),
+                    kurum = require('./db_kurum');
 
+                function f_tahta_bilgileri(_tahta, _optsTahta) {
                     var /** @type {Tahta} */
-                        olusan_tahta = schema.f_create_default_object(SABIT.SCHEMA.INDEX_TAHTA),
+                        olusan_tahta = schema.f_create_default_object(schema.SCHEMA.INDEX_TAHTA),
                         arrPromises = [];
 
-                    if (opts.bGenel) { // 1. Genel bilgilerini
+                    if (_optsTahta.bGenel) { // 1. Genel bilgilerini
                         olusan_tahta.Genel = _tahta;
                     }
 
                     arrPromises.push(
-                        (opts.bRolleri)
-                            ? rol.f_db_rol_tumu(_tahta_id)
+                        _optsTahta.bRolleri
+                            ? rol.f_db_rol_tumu(_tahta.Id)
                             : []);
 
                     arrPromises.push(
-                        (opts.bKurumu && _tahta.Kurum_Id)
+                        (_optsTahta.bKurumu && _tahta.Kurum_Id)
                             ? kurum.f_db_kurum_id(_tahta.Kurum_Id)
                             : null);
 
                     arrPromises.push(
-                        (opts.bUyeleri)
-                            ? f_db_tahta_uyeleri(_tahta_id, opts.optUye)
+                        _optsTahta.bUyeleri
+                            ? f_db_tahta_uyeleri(_tahta.Id, opts ? opts.optUye : {})
                             : []);
 
                     arrPromises.push(
-                        (opts.bAnahtarlari)
-                            ? f_db_tahta_anahtar_tumu(_tahta_id)
+                        _optsTahta.bAnahtarlari
+                            ? f_db_tahta_anahtar_tumu(_tahta.Id)
                             : []);
 
                     arrPromises.push(
-                        (opts.bAjanda)
-                            ? f_db_tahta_ajandasi(_tahta_id)
+                        _optsTahta.bAjanda
+                            ? f_db_tahta_ajandasi(_tahta.Id)
                             : null);
 
                     // tahtanın :
@@ -742,20 +744,44 @@ function DB_Tahta() {
                     // 4. Rollerini
                     // 5. Anahtarlarını
 
-                    return arrPromises.allX().then(function (_ress) {
+                    return arrPromises.allX()
+                        .then(function (_ress) {
 
-                        olusan_tahta.Roller = _ress[0];
-                        olusan_tahta.Genel.Kurum = _ress[1];
-                        olusan_tahta.Uyeler = _ress[2];
-                        olusan_tahta.AnahtarKelimeler = _ress[3];
-                        olusan_tahta.Ajanda = _ress[4];
+                            olusan_tahta.Roller = _ress[0];
+                            olusan_tahta.Genel.Kurum = _ress[1];
+                            olusan_tahta.Uyeler = _ress[2];
+                            olusan_tahta.AnahtarKelimeler = _ress[3];
+                            olusan_tahta.Ajanda = _ress[4];
 
-                        ssg = [{"f_db_tahta_id > olusan_tahta": olusan_tahta}];
-                        return olusan_tahta;
-                    });
-                })
-            .then(function (_dbTahta) {
-                return _dbTahta;
+                            return olusan_tahta;
+                        });
+                }
+
+                if (Array.isArray(_dbTahta)) {
+                    opts.bAjanda = false;
+
+                    return _dbTahta.mapX(null, f_tahta_bilgileri, opts)
+                        .allX()
+                        .then(function (_dbTahtaBilgileri) {
+
+                            //tahtanın ajandalarını topluca çekiyoruz
+                            var tahta_idler = _dbTahtaBilgileri.pluckX("Genel.Id");
+                            return f_db_tahta_ajandasi(tahta_idler)
+                                .then(function (_dbAjandaBilgileri) {
+                                    if (!_dbAjandaBilgileri) {
+                                        return _dbTahtaBilgileri;
+                                    }
+
+                                    _dbTahtaBilgileri.forEach(function (_elm, _idx) {
+                                        _elm.Ajanda = _dbAjandaBilgileri[_idx];
+                                    });
+
+                                    return _dbTahtaBilgileri;
+                                });
+                        })
+                } else {
+                    return f_tahta_bilgileri(_dbTahta, opts);
+                }
             })
             .fail(function (_err) {
                 l.e("Fail içinde HATA:\n\t", _err);
@@ -775,7 +801,7 @@ function DB_Tahta() {
             result.dbQ.srem(result.kp.kullanici.ssetUyeOlduguTahtalari(_kul_id, true), _tahta_id),
             result.dbQ.hdel(result.kp.tahta.hsUyeleri(_tahta_id), _kul_id)
         ]).then(function () {
-            emitter.emit(SABIT.OLAY.TAHTA_AYRIL, _tahta_id, _kul_id);
+            emitter.emit(schema.SABIT.OLAY.TAHTA_AYRIL, _tahta_id, _kul_id);
             return _tahta_id;
         });
     };
@@ -821,7 +847,7 @@ function DB_Tahta() {
 
         delete _tahta_db.Kurum;
 
-        l.i("f_db_tahta_ekle > _tahta: " + JSON.stringify(_tahta_db));
+        //l.i("f_db_tahta_ekle > _tahta: " + JSON.stringify(_tahta_db));
 
         // 1. Tahta oluştur
         // 1.1 incr idx
@@ -836,9 +862,8 @@ function DB_Tahta() {
 
                 _tahta_db.Id = _id;
                 // TODO: Tahta rollerini json'dan çekiyor ama bunu otomatik hale getirip json ilişkisi kaldırılacak.
-                var arrTemelRoller = require("../../public/json/roller.json").data;
+                var arrTemelRoller = require("../lib/roller.json").data;
 
-                //ssg = [{"arrTemelRoller": arrTemelRoller}];
                 return [
                     result.dbQ.hset(result.kp.tahta.tablo, _id, JSON.stringify(_tahta_db)), // 1
                     rol.f_db_rol_ekle(arrTemelRoller, _tahta_db.Id), // 2
@@ -862,7 +887,7 @@ function DB_Tahta() {
                         l.info("HERŞEY BİTTİ TAHTA ID DEN DÖN");
                         return f_db_tahta_id(_id)//4
                             .then(function (_dbTahta) {
-                                emitter.emit(SABIT.OLAY.TAHTA_EKLENDI, _dbTahta, _kul_id);
+                                emitter.emit(schema.SABIT.OLAY.TAHTA_EKLENDI, _dbTahta, _kul_id);
                                 return _dbTahta;
                             });
                     })
@@ -930,7 +955,7 @@ function DB_Tahta() {
             .then(function () {
                 return f_db_tahta_id(_tahta_db.Id)
                     .then(function (_dbTahta) {
-                        emitter.emit(SABIT.OLAY.TAHTA_GUNCELLENDI, _dbTahta, _kul_id);
+                        emitter.emit(schema.SABIT.OLAY.TAHTA_GUNCELLENDI, _dbTahta, _kul_id);
                         return _dbTahta;
                     });
             });
@@ -960,7 +985,7 @@ function DB_Tahta() {
 
                 return result.dbQ.hset(result.kp.tahta.tablo, _tahta_id, JSON.stringify(_tahta))
                     .then(function () {
-                        emitter.emit(SABIT.OLAY.TAHTA_SILINDI, _tahta_id, _kul_id);
+                        emitter.emit(schema.SABIT.OLAY.TAHTA_SILINDI, _tahta_id, _kul_id);
 
                         return result.dbQ.sismember(result.kp.kullanici.ssetSahipOlduguTahtalari(_kul_id, true), _tahta_id)
                             .then(function (_iSahip) {
@@ -1026,15 +1051,6 @@ function DB_Tahta() {
                 console.log("_arr_anahtar_kelimeler>" + _arr_anahtar_kelimeler);
                 if (_arr_anahtar_kelimeler && _arr_anahtar_kelimeler.length > 0) {
 
-                  /*  var promises = _arr_anahtar_kelimeler.map(function (_anahtar) {
-                        return result.f_db_anahtar_key(_anahtar)
-                            .then(function (_anahtar_id) {
-                                return {Id: _anahtar_id, Anahtar: _anahtar};
-                            });
-                    });
-
-                    return result.dbQ.Q.all(promises);*/
-
                     //önce anahtar kelimelere ait id leri tutuyoruz sonra da bilgilerini dönüyoruz
                     return result.f_db_anahtar_key(_arr_anahtar_kelimeler)
                         .then(function (_dbAnahtar_idler) {
@@ -1070,7 +1086,7 @@ function DB_Tahta() {
                 function (_anahtarObjesi) {
                     l.info("JSON.stringify(_anahtarObjesi):");
                     l.info(JSON.stringify(_anahtarObjesi));
-                    emitter.emit(SABIT.OLAY.TAHTA_ANAHTAR_EKLENDI, _tahta_id, _anahtarObjesi, _kul_id);
+                    emitter.emit(schema.SABIT.OLAY.TAHTA_ANAHTAR_EKLENDI, _tahta_id, _anahtarObjesi, _kul_id);
                     return result.dbQ.zadd(result.kp.tahta.zsetAnahtarKelimeleri(_tahta_id), new Date().getTime(), _anahtar.Anahtar)
                         .then(function () {
                             return _anahtarObjesi;
@@ -1089,11 +1105,11 @@ function DB_Tahta() {
                  */
                 function (_dbAnahtar) {
                     if (_dbAnahtar != null) {
-                        emitter.emit(SABIT.OLAY.TAHTA_ANAHTAR_SILINDI, _tahta_id, _dbAnahtar, _kul_id);
+                        emitter.emit(schema.SABIT.OLAY.TAHTA_ANAHTAR_SILINDI, _tahta_id, _dbAnahtar, _kul_id);
                         return result.dbQ.zrem(result.kp.tahta.zsetAnahtarKelimeleri(_tahta_id), _dbAnahtar.Anahtar);
                     }
                     else {
-                        throw new exception.istisna("Anahtar sil", "Anahtar bilgisi BULUNAMADI! Bu nedenle silme tamamlanamadı..");
+                        throw new exception.Istisna("Anahtar sil", "Anahtar bilgisi BULUNAMADI! Bu nedenle silme tamamlanamadı..");
                     }
                 });
     };
@@ -1158,7 +1174,7 @@ function DB_Tahta() {
          * @returns {OptionsTahta}
          */
         OptionsTahta: function (opt) {
-            return extend(
+            return _.extend(
                 /** @class OptionsTahta */
                 {
                     arrTahta_id: null,
@@ -1169,7 +1185,6 @@ function DB_Tahta() {
                     bUyeleri: true,
                     bAjanda: true,
                     optUye: {
-                        bTemelTahtaUyeBilgileri: true,
                         bArrTahtaUyeRolId: true
                     }
                 }, opt || {});

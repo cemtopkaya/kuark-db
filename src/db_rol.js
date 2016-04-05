@@ -1,3 +1,8 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    extension = require('kuark-extensions');
+
 /**
  *
  * @returns {DBRol}
@@ -58,20 +63,16 @@ function DB_Rol() {
     var f_db_rol_tumu = function (_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetOzelTahtaRolleri(_tahta_id, true))
             .then(function (_rol_idler) {
-                return f_db_rol_idler(_rol_idler);
+                return f_db_rol_id(_rol_idler);
             });
     };
     //endregion
 
     //region ROL_İD
     var f_db_rol_id = function (_id) {
-        return result.dbQ.hget_json_parse(result.kp.rol.tablo, _id);
-    };
-
-    var f_db_rol_idler = function (_idler) {
-        return (Array.isArray(_idler) && _idler.length > 0)
-            ? result.dbQ.hmget_json_parse(result.kp.rol.tablo, _idler)
-            : [];
+        return Array.isArray(_id)
+            ? result.dbQ.hmget_json_parse(result.kp.rol.tablo, _id)
+            : result.dbQ.hget_json_parse(result.kp.rol.tablo, _id);
     };
 
     //endregion
@@ -131,7 +132,6 @@ function DB_Rol() {
      * @returns {Promise}
      */
     var f_db_rol_sil_kullanici = function (_kul_id, _tahta_id, _rol_id) {
-        ssg = [{"_kul_id": _kul_id}, {"_tahta_id": _tahta_id}, {"_rol_id": _rol_id}];
         if (_rol_id) {
             return result.dbQ.hget_json_parse(result.kp.tahta.hsUyeleri(_tahta_id), _kul_id)
                 .then(function (_arrUyeRolId) {
@@ -214,7 +214,6 @@ function DB_Rol() {
         f_db_rol_sil_kullanici: f_db_rol_sil_kullanici,
         f_db_rol_guncelle: f_db_rol_guncelle,
         f_db_rol_ekle: f_db_rol_ekle,
-        f_db_rol_idler: f_db_rol_idler,
         f_db_rol_id: f_db_rol_id,
         f_db_rol_tumu: f_db_rol_tumu
     };

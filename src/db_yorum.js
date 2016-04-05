@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  *
  * @returns {DBYorum}
@@ -5,6 +7,7 @@
  */
 function DB_Yorum() {
     var db_haber = require('./db_haber'),
+        schema = require("kuark-schema"),
         /**
          *
          * @type {DBYorum}
@@ -24,7 +27,7 @@ function DB_Yorum() {
                 return result.dbQ.hset(result.kp.yorum.tablo, _id, JSON.stringify(yorum));
                 /*.then(function () {
                  var haber = {
-                 Tipi: SABIT.TABLO_ADI.YORUM,
+                 Tipi: schema.SABIT.TABLO_ADI.YORUM,
                  Id: yorum.Id,
                  TabloDeger: "yorum:" + yorum.Id,
                  Icerik: yorum.Icerik + " i�erikli YORUM eklendi.",

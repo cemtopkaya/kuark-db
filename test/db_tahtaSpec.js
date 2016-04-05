@@ -1,26 +1,31 @@
-var uuid = require('node-uuid'),
-    db = require("../../node/server/db")(),
-    should = require('should'),
-    g = require('../../node/globals'),
-    request = require('supertest');
+var db = require("../src/index")(),
+    should = require('chai').should,
+    expect = require('chai').expect,
+    assert = require('chai').assert,
+    schema = require("kuark-schema"),
+    extension = require('kuark-extensions'),
+    uuid = require('node-uuid'),
+    l = require('../lib/winstonConfig');
 
-describe("db_tahta", function () {
+describe("DB Tahta İşlemleri", function () {
 
-    var tahta = schema.f_create_default_object(SABIT.SCHEMA.INDEX_TAHTA),
-        apiRootUrl = "http://127.0.0.1:3000",
-        davetli = {EPosta: "cem.topkaya@fmc-ag.com", Roller: [1, 3, 4]},
+    /** @type {Tahta} */
+    var tahta = schema.f_create_default_object(schema.SCHEMA.INDEX_TAHTA),
         kullanici_id = 1,
         tahtaRolu = {Id: 0, Adi: "Onaycı", Yetki: ["Kullanıcı Ekler", "Ihale Onaylar"]};
-    var kullanici = schema.f_create_default_object(SABIT.SCHEMA.KULLANICI),
-        apiRootUrl = "http://127.0.0.1:3000";
+
+    /** @type {Kullanici} */
+    var kullanici = schema.f_create_default_object(schema.SCHEMA.KULLANICI);
+
     kullanici.AdiSoyadi = "Cem Topkaya";
     kullanici.EPosta = "cem.topkaya@fmc-ag.com";
     kullanici.Sifre = ".q1w2e3r4.";
 
-
     before(function (done) {
-        tahta.Adi = "Kullanıcı Tahtası " + (new Date()).getTime();
-        tahta.Aciklama = "Tahta bilgileri";
+
+        tahta.Genel.Id = 1;
+        tahta.Genel.Adi = "Kullanıcı Tahtası " + (new Date()).getTime();
+        tahta.Genel.Aciklama = "Tahta bilgileri";
         done();
     });
 
@@ -28,23 +33,25 @@ describe("db_tahta", function () {
     describe("Temel Tahta işlemleri", function () {
         it("Tahta ekleniyor", function (done) {
             db.tahta.f_db_tahta_ekle(tahta, kullanici_id)
-                .then(function (_dbTahta) {
-                    l.info("Eklenen tahta: " + JSON.stringify(_dbTahta));
-                    (_dbTahta.Id).should.be.a.Number.not.equal(0);
-                    tahta = _dbTahta;
-                    done();
-                })
+                .then(
+                    /** @param {Tahta} _dbTahta */
+                    function (_dbTahta) {
+                        assert(_dbTahta.Genel.Id > 0, 'Tahta sisteme eklenemedi!');
+                        done();
+                    })
                 .fail(function (_err) {
-                    l.error(_err);
+                    extension.ssr = _err;
                     done(_err);
                 });
         });
 
+
         it("Tahta çekiliyor", function (done) {
-            db.tahta.f_db_tahta_id(1)
+            var iCekilenTahta_Id = 1;
+            db.tahta.f_db_tahta_id(iCekilenTahta_Id)
                 .then(function (_dbTahta) {
-                    l.info("Çekilen tahta: " + JSON.stringify(_dbTahta, null, 2));
-                    //(_dbTahta.Genel.Id).should.be.a.Number.not.equal(0);
+                    //l.info("Çekilen tahta: " + JSON.stringify(_dbTahta, null, 2));
+                    assert(_dbTahta.Genel.Id == iCekilenTahta_Id, 'Çekilen tahtanın ID bilgisi istediğimiz ID\'den farklı!');
                     tahta = _dbTahta;
                     done();
                 })
@@ -56,86 +63,341 @@ describe("db_tahta", function () {
     });
 
     describe("Test", function () {
+
         it("Sadece test", function (done) {
             db.redis.dbQ.hmget("adim", ["1", "3", "4"])
                 .then(function (_reply) {
                     console.log("_reply:")
-                    console.log(_reply)
+                    console.log(_reply);
+                    done();
                 })
                 .fail(function (_err) {
                     console.log("_err:")
-                    console.log(_err)
+                    console.log(_err);
+                    done(_err);
                 })
         });
     });
 
     describe("Rol işlemleri", function () {
         it("Rol ekle", function (done) {
-            var roller = [
-                {
+            this.timeout = 6000;
+            var roller = [{
+                    "Id": 0,
                     "Adi": "Admin",
-                    "Kurum_C": true,
-                    "Urun_C": true,
-                    "Ihale_C": true,
-                    "Satir_C": true,
-                    "Teklif_C": true,
-                    "Urun_R": true,
-                    "Kurum_R": true,
-                    "Ihale_R": true,
-                    "Satir_R": true,
-                    "Teklif_R": true,
-                    "Teklif_U": true,
-                    "Satir_U": true,
-                    "Ihale_U": true,
-                    "Urun_U": true,
-                    "Kurum_D": true,
-                    "Kurum_U": true,
-                    "Urun_D": true,
-                    "Ihale_D": true,
-                    "Satir_D": true,
-                    "Teklif_D": true
-                },
-                {
-                    "Adi": "Viewer",
-                    "Urun_R": true,
-                    "Kurum_R": true,
-                    "Ihale_R": true,
-                    "Satir_R": true,
-                    "Teklif_R": true
-                },
-                {
-                    "Adi": "Writer",
-                    "Urun_R": false,
-                    "Kurum_R": false,
-                    "Ihale_R": false,
-                    "Satir_R": false,
-                    "Teklif_R": false,
-                    "Kurum_C": true,
-                    "Urun_C": true,
-                    "Ihale_C": true,
-                    "Satir_C": true,
-                    "Teklif_C": true,
-                    "Teklif_U": true,
-                    "Satir_U": true,
-                    "Ihale_U": true,
-                    "Urun_U": true,
-                    "Kurum_U": true
-                }
-            ]
-            db.rol.f_db_rol_ekle(1, roller)
+                    "Yetki": {
+                        "firma": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": true,
+                            "h": true
+                        },
+                        "urun": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": true,
+                            "h": null
+                        },
+                        "ihale": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": true,
+                            "h": true
+                        },
+                        "kalem": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": true
+                        },
+                        "kalemDurum": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": null,
+                            "s": null,
+                            "h": null
+                        },
+                        "teklif": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "uye": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "uyeRolleri": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": null,
+                            "s": null,
+                            "h": null
+                        },
+                        "rol": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "davet": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "uyari": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "tahta": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "haber": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "ajanda": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "ajandaYetki": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "anahtar": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "bolge": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        },
+                        "sehir": {
+                            "c": true,
+                            "r": true,
+                            "u": true,
+                            "d": true,
+                            "s": null,
+                            "h": null
+                        }
+                    }
+                }],
+                tahta_id = 1;
+
+            db.rol.f_db_rol_ekle(roller, tahta_id)
                 .then(function (_dbRol) {
                     l.info("Eklenen rol: " + JSON.stringify(_dbRol));
 
                     done();
                 })
                 .fail(function (_err) {
-                    l.error(_err);
+                    extensions.ssr = [{"_err": _err}];
                     done(_err);
                 });
         });
 
         it("Rol güncelle", function (done) {
-            var rol = {};
+            this.timeout = 6000;
+            var rol = {
+                "Id": 1,
+                "Adi": "Admin",
+                "Yetki": {
+                    "firma": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": true,
+                        "h": true
+                    },
+                    "urun": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": true,
+                        "h": null
+                    },
+                    "ihale": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": true,
+                        "h": true
+                    },
+                    "kalem": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": true
+                    },
+                    "kalemDurum": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": null,
+                        "s": null,
+                        "h": null
+                    },
+                    "teklif": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "uye": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "uyeRolleri": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": null,
+                        "s": null,
+                        "h": null
+                    },
+                    "rol": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "davet": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "uyari": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "tahta": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "haber": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "ajanda": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "ajandaYetki": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "anahtar": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "bolge": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    },
+                    "sehir": {
+                        "c": true,
+                        "r": true,
+                        "u": true,
+                        "d": true,
+                        "s": null,
+                        "h": null
+                    }
+                }
+            };
             db.rol.f_db_rol_guncelle(1, rol)
                 .then(function (_dbRol) {
                     l.info(JSON.stringify(_dbRol));
@@ -146,26 +408,20 @@ describe("db_tahta", function () {
                     done(_err);
                 });
         });
-
-        it("Rol silme", function (done) {
-            db.rol.f_db_rol_sil(tahta.Id, tahtaRolu.Id)
-                .then(function (_dbRol) {
-                    l.info("Silinen rol dbReply: " + JSON.stringify(_dbRol));
-                    done();
-                })
-                .fail(function (_err) {
-                    l.error(_err);
-                    done(_err);
-                });
-        });
     });
 
     describe("Davetli işlemleri", function () {
+        var davetli = null;
+        before(function () {
+            davetli = {EPosta: "cem.topkaya@fmc-ag.com", Roller: [1], UID: uuid.v1()};
+        });
+
         it("Tahtaya davet ekleme", function (done) {
-            db.tahta.f_db_tahta_davet_ekle(tahta.Id, davetli)
+
+            db.tahta.f_db_tahta_davet_ekle(tahta.Genel.Id, davetli)
                 .then(function (_dbReply) {
                     l.info("Eklenen davet sonucu dbReply: " + _dbReply);
-                    (_dbReply).should.be.a.Number.equal(1);
+                    expect(_dbReply).to.be.equal(1);
                     done();
                 })
                 .fail(function (_err) {
@@ -174,31 +430,18 @@ describe("db_tahta", function () {
                 });
         });
 
-        it("Tahtaya davet UID ekleme", function (done) {
+        it("Olmayan daveti tahtadan silme", function (done) {
 
-            db.tahta.f_db_tahta_davet_uid_ekle(tahta.Id, uuid.v1(), davetli.EPosta)
+            var eposta = uuid.v1() + "@fmc-ag.com";
+            console.log("Eposta: ", eposta);
+            db.tahta.f_db_tahta_davet_sil(tahta.Genel.Id, eposta)
                 .then(function (_dbReply) {
-                    l.info("Eklenen davet UID sonucu dbReply: " + _dbReply);
-                    (_dbReply).should.be.a.Number.equal(1);
+                    console.log("_dbReply: > ", _dbReply);
+                    expect(_dbReply).to.be.a('null');
                     done();
                 })
                 .fail(function (_err) {
-                    l.error(_err);
-                    done(_err);
-                });
-        });
-
-        it("Tahtaya davet silme", function (done) {
-
-            var eposta = "cem.topkaya@fmc-ag.com";
-            db.tahta.f_db_tahta_davet_sil(tahta.Id, eposta)
-                .then(function (_dbReply) {
-                    l.info("Davet silmenin sonucu dbReply: " + _dbReply);
-                    (_dbReply).should.be.a.Number.equal(1);
-                    done();
-                })
-                .fail(function (_err) {
-                    l.error(_err);
+                    console.error(_err);
                     done(_err);
                 });
         });
@@ -206,8 +449,9 @@ describe("db_tahta", function () {
 
     describe("Üye işlemleri", function () {
         it("Tahtaya üye ekleme", function (done) {
+            this.timeout = 6000;
             var uye = {Kullanici_Id: 1, Roller: [tahtaRolu.Id]};
-            db.tahta.f_db_tahta_uye_ekle(tahta.Id, uye)
+            db.tahta.f_db_tahta_uye_ekle(tahta.Genel.Id, uye)
                 .then(function (_dbReply) {
                     l.info("Tahtaya üye eklendi. DB sonucu dbReply: " + _dbReply);
                     done();
@@ -219,27 +463,31 @@ describe("db_tahta", function () {
         });
 
         it("Tahtanın üyelerini çekme", function (done) {
-            db.tahta.dbQ.del(db.redis.kp.temp.ssetKullanici)
-                .then(function () {
-                    db.tahta.f_db_tahta_uyeleri(1)
-                        .then(function (_dbReply) {
-                            l.info("Tahtanın üyeleri çekildi. DB sonucu dbReply: " + JSON.stringify(_dbReply, null, 2));
-                            //_dbReply.should.be.defined;
-                            //(_dbReply).should.be.an.Array;
-                            done();
-                        })
-                        .fail(function (_err) {
-                            l.error(_err);
-                            done(_err);
-                        });
+            this.timeout = 6000;
+            db.tahta.f_db_tahta_uyeleri(1)
+                .then(function (_dbReply) {
+                    l.info("Tahtanın üyeleri çekildi. DB sonucu dbReply: " + JSON.stringify(_dbReply, null, 2));
+                    //_dbReply.should.be.defined;
+                    //(_dbReply).should.be.an.Array;
+                    done();
+                })
+                .fail(function (_err) {
+                    l.error(_err);
+                    done(_err);
                 });
+
         });
 
     });
 
     describe("Anahtar işlemleri", function () {
         it("Tahtaya anahtar ekleme", function (done) {
-            var anahtar = {AnahtarKelimeler: "duygu;deniz;test"};
+            this.timeout = 6000;
+            /** @type {AnahtarKelime} */
+            var anahtar = {};
+            anahtar.Anahtar = "kalem";
+            anahtar.Id = 0;
+
             db.tahta.f_db_tahta_anahtar_ekle(1, anahtar)
                 .then(function (_dbReply) {
                     l.info("Tahtaya anahtar eklendi. DB sonucu dbReply: " + _dbReply);
@@ -252,6 +500,7 @@ describe("db_tahta", function () {
         });
 
         it("Tahtanın anahtarlarını çekme", function (done) {
+            this.timeout = 6000;
             db.tahta.f_db_tahta_anahtar_tumu(1)
                 .then(function (_dbReply) {
                     l.info("Tahtanın anahtarları çekildi. DB sonucu dbReply: " + _dbReply);

@@ -1,25 +1,18 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    uuid = require('node-uuid'),
+    schema = require('kuark-schema'),
+    _ = require('lodash'),
+    extensions = require('kuark-extensions');
+
 /**
  *
  * @returns {DBUyariServisi}
  * @constructor
  */
 function DB_UyariServisi() {
-    var db_olay = require('./db_olay'),
-        db_uyari = require('./db_uyari'),
-        db_kullanici = require('./db_kullanici'),
-        db_ihale = require('./db_ihale'),
-        db_kurum = require('./db_kurum'),
-        db_urun = require('./db_urun'),
-        db_kalem = require('./db_kalem'),
-        db_teklif = require('./db_teklif'),
-        db_tahta = require('./db_tahta'),
-        db_gorev = require('./db_gorev'),
-        db_ileti = require('./db_ileti'),
-        db_dikkat = require('./db_dikkat'),
-        db_rol = require('./db_rol'),
-        EMail = require('./../email/email'),
-        mail = new EMail("", "", "", true),
-        uuid = require('node-uuid'),
+    var
         /**
          *
          * @type {DBUyariServisi}
@@ -108,33 +101,36 @@ function DB_UyariServisi() {
             .then(function (_cekilen_idler) {
                 if (_cekilen_idler && _cekilen_idler.length > 0) {
                     switch (_olay) {
-                        case SABIT.OLAY.IHALE_EKLENDI:
-                        case SABIT.OLAY.IHALE_GUNCELLENDI:
-                        case SABIT.OLAY.IHALE_SILINDI:
-                        case SABIT.OLAY.IHALE_TARIHI_ERTELENDI:
+                        case schema.SABIT.OLAY.IHALE_EKLENDI:
+                        case schema.SABIT.OLAY.IHALE_GUNCELLENDI:
+                        case schema.SABIT.OLAY.IHALE_SILINDI:
+                        case schema.SABIT.OLAY.IHALE_TARIHI_ERTELENDI:
                         {
+                            var db_ihale = require('./db_ihale');
                             return db_ihale.f_db_tahta_ihale_idler_aktif(_tahta_id)
                                 .then(function (_ihale_idler) {
                                     return _.intersection(_ihale_idler, _cekilen_idler);
                                 });
                         }
                             break;
-                        case SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI:
-                        case SABIT.OLAY.KALEM_EKLENDI:
-                        case SABIT.OLAY.KALEM_GUNCELLENDI:
-                        case SABIT.OLAY.KALEM_SILINDI:
+                        case schema.SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI:
+                        case schema.SABIT.OLAY.KALEM_EKLENDI:
+                        case schema.SABIT.OLAY.KALEM_GUNCELLENDI:
+                        case schema.SABIT.OLAY.KALEM_SILINDI:
                         {
+                            var db_kalem = require('./db_kalem');
                             return db_kalem.f_db_tahta_kalem_idler_aktif(_tahta_id)
                                 .then(function (_kalem_idler) {
                                     return _.intersection(_kalem_idler, _cekilen_idler);
                                 });
                         }
                             break;
-                        case SABIT.OLAY.TEKLIF_DURUMU_GUNCELLENDI:
-                        case SABIT.OLAY.TEKLIF_EKLENDI:
-                        case SABIT.OLAY.TEKLIF_GUNCELLENDI:
-                        case SABIT.OLAY.TEKLIF_SILINDI:
+                        case schema.SABIT.OLAY.TEKLIF_DURUMU_GUNCELLENDI:
+                        case schema.SABIT.OLAY.TEKLIF_EKLENDI:
+                        case schema.SABIT.OLAY.TEKLIF_GUNCELLENDI:
+                        case schema.SABIT.OLAY.TEKLIF_SILINDI:
                         {
+                            var db_tahta = require('./db_tahta');
                             return db_tahta.f_db_tahta_teklif_idleri(_tahta_id)
                                 .then(function (_teklif_idler) {
                                     return _.intersection(_teklif_idler, _cekilen_idler);
@@ -142,23 +138,25 @@ function DB_UyariServisi() {
                         }
                             break;
 
-                        case SABIT.OLAY.URUN_EKLENDI:
-                        case SABIT.OLAY.URUN_GUNCELLENDI:
-                        case SABIT.OLAY.URUN_SILINDI:
-                        case SABIT.OLAY.URUN_ANAHTAR_EKLENDI:
-                        case SABIT.OLAY.URUN_ANAHTAR_SILINDI:
+                        case schema.SABIT.OLAY.URUN_EKLENDI:
+                        case schema.SABIT.OLAY.URUN_GUNCELLENDI:
+                        case schema.SABIT.OLAY.URUN_SILINDI:
+                        case schema.SABIT.OLAY.URUN_ANAHTAR_EKLENDI:
+                        case schema.SABIT.OLAY.URUN_ANAHTAR_SILINDI:
                         {
-                            return db_urun.f_db_aktif_urun_idleri(_tahta_id)
+                            var db_urun = require('./db_urun')
+                            return db_urun.f_db_urun_aktif_urun_idleri(_tahta_id)
                                 .then(function (_urun_idler) {
                                     return _.intersection(_urun_idler, _cekilen_idler);
                                 });
                         }
                             break;
 
-                        case SABIT.OLAY.KURUM_EKLENDI:
-                        case SABIT.OLAY.KURUM_GUNCELLENDI:
-                        case SABIT.OLAY.KURUM_SILINDI:
+                        case schema.SABIT.OLAY.KURUM_EKLENDI:
+                        case schema.SABIT.OLAY.KURUM_GUNCELLENDI:
+                        case schema.SABIT.OLAY.KURUM_SILINDI:
                         {
+                            var db_kurum = require('./db_kurum');
                             return db_kurum.f_db_aktif_kurum_idleri(_tahta_id)
                                 .then(function (_kurum_idler) {
                                     return _.intersection(_kurum_idler, _cekilen_idler);
@@ -183,58 +181,58 @@ function DB_UyariServisi() {
     var f_elastic_tipi = function (_olay) {
         var tipi = "";
         switch (_olay) {
-            case SABIT.OLAY.IHALE_EKLENDI:
-            case SABIT.OLAY.IHALE_GUNCELLENDI:
-            case SABIT.OLAY.IHALE_SILINDI:
-            case SABIT.OLAY.IHALE_TARIHI_ERTELENDI:
-            case SABIT.OLAY.IHALE_TARIHI_X_GUN_KALA:
+            case schema.SABIT.OLAY.IHALE_EKLENDI:
+            case schema.SABIT.OLAY.IHALE_GUNCELLENDI:
+            case schema.SABIT.OLAY.IHALE_SILINDI:
+            case schema.SABIT.OLAY.IHALE_TARIHI_ERTELENDI:
+            case schema.SABIT.OLAY.IHALE_TARIHI_X_GUN_KALA:
             {
-                tipi = SABIT.ELASTIC.TIP.IHALE;
+                tipi = schema.SABIT.ELASTIC.TIP.IHALE;
             }
                 break;
-            case SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI:
-            case SABIT.OLAY.KALEM_EKLENDI:
-            case SABIT.OLAY.KALEM_GUNCELLENDI:
-            case SABIT.OLAY.KALEM_SILINDI:
-            case SABIT.OLAY.KALEM_KATILIYORUZ:
-            case SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
-            case SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
-            case SABIT.OLAY.KALEM_ITIRAZ_KABUL:
-            case SABIT.OLAY.KALEM_ITIRAZ_RED:
-            case SABIT.OLAY.KALEM_IPTAL:
+            case schema.SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI:
+            case schema.SABIT.OLAY.KALEM_EKLENDI:
+            case schema.SABIT.OLAY.KALEM_GUNCELLENDI:
+            case schema.SABIT.OLAY.KALEM_SILINDI:
+            case schema.SABIT.OLAY.KALEM_KATILIYORUZ:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_KABUL:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_RED:
+            case schema.SABIT.OLAY.KALEM_IPTAL:
             {
-                tipi = SABIT.ELASTIC.TIP.KALEM;
+                tipi = schema.SABIT.ELASTIC.TIP.KALEM;
             }
                 break;
-            case SABIT.OLAY.TEKLIF_DURUMU_GUNCELLENDI:
-            case SABIT.OLAY.TEKLIF_EKLENDI:
-            case SABIT.OLAY.TEKLIF_GUNCELLENDI:
-            case SABIT.OLAY.TEKLIF_SILINDI:
-            case SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
-            case SABIT.OLAY.TEKLIF_IPTAL:
-            case SABIT.OLAY.TEKLIF_KAZANDI:
-            case SABIT.OLAY.TEKLIF_URUN_BELGESI_EKSIK:
-            case SABIT.OLAY.TEKLIF_URUNU_REDDEDILDI:
+            case schema.SABIT.OLAY.TEKLIF_DURUMU_GUNCELLENDI:
+            case schema.SABIT.OLAY.TEKLIF_EKLENDI:
+            case schema.SABIT.OLAY.TEKLIF_GUNCELLENDI:
+            case schema.SABIT.OLAY.TEKLIF_SILINDI:
+            case schema.SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
+            case schema.SABIT.OLAY.TEKLIF_IPTAL:
+            case schema.SABIT.OLAY.TEKLIF_KAZANDI:
+            case schema.SABIT.OLAY.TEKLIF_URUN_BELGESI_EKSIK:
+            case schema.SABIT.OLAY.TEKLIF_URUNU_REDDEDILDI:
             {
-                tipi = SABIT.ELASTIC.TIP.TEKLIF;
-            }
-                break;
-
-            case SABIT.OLAY.URUN_EKLENDI:
-            case SABIT.OLAY.URUN_GUNCELLENDI:
-            case SABIT.OLAY.URUN_SILINDI:
-            case SABIT.OLAY.URUN_ANAHTAR_EKLENDI:
-            case SABIT.OLAY.URUN_ANAHTAR_SILINDI:
-            {
-                tipi = SABIT.ELASTIC.TIP.URUN;
+                tipi = schema.SABIT.ELASTIC.TIP.TEKLIF;
             }
                 break;
 
-            case SABIT.OLAY.KURUM_EKLENDI:
-            case SABIT.OLAY.KURUM_GUNCELLENDI:
-            case SABIT.OLAY.KURUM_SILINDI:
+            case schema.SABIT.OLAY.URUN_EKLENDI:
+            case schema.SABIT.OLAY.URUN_GUNCELLENDI:
+            case schema.SABIT.OLAY.URUN_SILINDI:
+            case schema.SABIT.OLAY.URUN_ANAHTAR_EKLENDI:
+            case schema.SABIT.OLAY.URUN_ANAHTAR_SILINDI:
             {
-                tipi = SABIT.ELASTIC.TIP.KURUM;
+                tipi = schema.SABIT.ELASTIC.TIP.URUN;
+            }
+                break;
+
+            case schema.SABIT.OLAY.KURUM_EKLENDI:
+            case schema.SABIT.OLAY.KURUM_GUNCELLENDI:
+            case schema.SABIT.OLAY.KURUM_SILINDI:
+            {
+                tipi = schema.SABIT.ELASTIC.TIP.KURUM;
             }
                 break;
             default:
@@ -251,34 +249,34 @@ function DB_UyariServisi() {
     var f_kalem_onay_durum_idsi = function (_olay) {
         var tipi = "";
         switch (_olay) {
-            case SABIT.OLAY.KALEM_KATILIYORUZ:
+            case schema.SABIT.OLAY.KALEM_KATILIYORUZ:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.KATILIYORUZ;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.KATILIYORUZ;
             }
                 break;
-            case SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.ITIRAZ_EDILECEK;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.ITIRAZ_EDILECEK;
             }
                 break;
-            case SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.ITIRAZ_EDILDI;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.ITIRAZ_EDILDI;
             }
                 break;
-            case SABIT.OLAY.KALEM_ITIRAZ_KABUL:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_KABUL:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.ITIRAZ_KABUL;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.ITIRAZ_KABUL;
             }
                 break;
-            case SABIT.OLAY.KALEM_ITIRAZ_RED:
+            case schema.SABIT.OLAY.KALEM_ITIRAZ_RED:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.ITIRAZ_RED;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.ITIRAZ_RED;
             }
                 break;
-            case SABIT.OLAY.KALEM_IPTAL:
+            case schema.SABIT.OLAY.KALEM_IPTAL:
             {
-                tipi = SABIT.ONAY_DURUM.kalem.IPTAL;
+                tipi = schema.SABIT.ONAY_DURUM.kalem.IPTAL;
             }
                 break;
             default:
@@ -295,19 +293,19 @@ function DB_UyariServisi() {
     var f_teklif_onay_durum_idsi = function (_olay) {
         var tipi = "";
         switch (_olay) {
-            case SABIT.OLAY.TEKLIF_KAZANDI:
+            case schema.SABIT.OLAY.TEKLIF_KAZANDI:
             {
-                tipi = SABIT.ONAY_DURUM.teklif.KAZANDI;
+                tipi = schema.SABIT.ONAY_DURUM.teklif.KAZANDI;
             }
                 break;
-            case SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
+            case schema.SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
             {
-                tipi = SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI;
+                tipi = schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI;
             }
                 break;
-            case SABIT.OLAY.TEKLIF_REDDEDILDI:
+            case schema.SABIT.OLAY.TEKLIF_REDDEDILDI:
             {
-                tipi = SABIT.ONAY_DURUM.teklif.REDDEDILDI;
+                tipi = schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI;
             }
                 break;
             default:
@@ -336,22 +334,22 @@ function DB_UyariServisi() {
     };
 
     var f_haber_icerik_bilgisi = function (_tip, _obj) {
-        if (_tip.indexOf(SABIT.TABLO_ADI.IHALE) != -1) {
+        if (_tip.indexOf(schema.SABIT.TABLO_ADI.IHALE) != -1) {
             return _obj.Konusu + " konulu yeni İHALE eklendi.";
         }
-        else if (_tip.indexOf(SABIT.TABLO_ADI.KURUM) != -1) {
+        else if (_tip.indexOf(schema.SABIT.TABLO_ADI.KURUM) != -1) {
             return _obj.Adi + " isimli yeni FİRMA eklendi.";
         }
-        else if (_tip.indexOf(SABIT.TABLO_ADI.KALEM) != -1) {
+        else if (_tip.indexOf(schema.SABIT.TABLO_ADI.KALEM) != -1) {
             return _obj.Aciklama + " içerikli KALEM eklendi.";
         }
-        else if (_tip.indexOf(SABIT.TABLO_ADI.URUN) != -1) {
+        else if (_tip.indexOf(schema.SABIT.TABLO_ADI.URUN) != -1) {
             return _obj.Adi + " isimli yeni ÜRÜN eklendi.";
         }
-        else if (_tip.indexOf(SABIT.TABLO_ADI.TEKLIF) != -1) {
+        else if (_tip.indexOf(schema.SABIT.TABLO_ADI.TEKLIF) != -1) {
             return "TEKLİF eklendi.";
         }
-        else if (_tip.indexOf(SABIT.TABLO_ADI.YORUM) != -1) {
+        else if (_tip.indexOf(schema.SABIT.TABLO_ADI.YORUM) != -1) {
             return _obj.Icerik + " içerikli YORUM eklendi.";
         }
     };
@@ -389,56 +387,44 @@ function DB_UyariServisi() {
      * @returns {*}
      */
     var f_alert_secildi = function (_uyari) {
-        var defer = result.dbQ.Q.defer();
+
         l.info("f_alert_secildi");
 
         var ids = f_uye_id_array(_uyari);
 
-        var arr = _uyari.RENDER.Sonuc.Data.map(function (_elm) {
-            var detay = f_detay_olustur(SABIT.UYARI.ALERT, _uyari, _elm);
+        return _uyari.RENDER.Sonuc.Data.map(function (_elm) {
+            var detay = f_detay_olustur(schema.SABIT.UYARI.ALERT, _uyari, _elm);
             return f_db_uyari_sonucu_ekle(detay)
                 .then(function (_id) {
-                    return ids.map(function (_kul_id) {
-                        return db_dikkat.f_db_dikkat_ekle(_kul_id, _id);
-                    });
+                    var db_dikkat = require('./db_dikkat');
+
+                    return ids.mapX(null, db_dikkat.f_db_dikkat_ekle, _id).allX();
                 });
-        });
-
-
-        result.dbQ.Q.all(arr)
-            .then(function () {
-                defer.resolve("Alert (dikkat) eklendi");
-            });
-
-        return defer.promise;
+        }).allX();
     };
     //endregion
 
     //region TO-DO
     var f_todo_secildi = function (_uyari) {
-        var defer = result.dbQ.Q.defer();
+
         l.info("f_todo_secildi");
 
         //bu uyarı için atanmış kullanıcı id lerini çek
         var kullanici_idleri = f_uye_id_array(_uyari);
 
-        var arr = _uyari.RENDER.Sonuc.Data.map(function (_elm) {
-            var detay = f_detay_olustur(SABIT.UYARI.TODO, _uyari, _elm);
-            return f_db_uyari_sonucu_ekle(detay)
-                .then(function (_id) {
-                    //eklenen uyarı sonucunu görevlere ekliyoruz
-                    return kullanici_idleri.map(function (_kul_id) {
-                        return db_gorev.f_db_gorev_ekle(_kul_id, _id);
+        return _uyari.RENDER.Sonuc.Data.map(function (_elm) {
+                var detay = f_detay_olustur(schema.SABIT.UYARI.TODO, _uyari, _elm);
+                return f_db_uyari_sonucu_ekle(detay)
+                    .then(function (_id) {
+
+                        var db_gorev = require('./db_gorev');
+
+                        //eklenen uyarı sonucunu görevlere ekliyoruz
+
+                        return kullanici_idleri.mapX(null, db_gorev.f_db_gorev_ekle, _id).allX();
                     });
-                });
-        });
-
-        result.dbQ.Q.all(arr)
-            .then(function () {
-                defer.resolve("Kullanıcının to-do (görev) listesine eklendi");
-            });
-
-        return defer.promise;
+            })
+            .allX();
 
     };
     //endregion
@@ -456,8 +442,6 @@ function DB_UyariServisi() {
     var f_mail_icerik_olustur_html = function (_tahta_id, _tipi, _olay, _sonuc, _uyari_id) {
         var defer = result.dbQ.Q.defer();
 
-        ssg = {"f_mail_icerik_olustur_html": arguments};
-
         /** @type {OptionsTahta} */
         var opt = {};
         opt.bAnahtarlari = false;
@@ -467,20 +451,21 @@ function DB_UyariServisi() {
         opt.bUyeleri = false;
         opt.bAjanda = false;
 
+        var db_tahta = require('./db_tahta');
         db_tahta.f_db_tahta_id(_tahta_id, opt)
             .then(function (_dbTahta) {
 
                 var icerik = "[" + _dbTahta.Genel.Adi + "] isimli tahtanın [" + _olay + "] tipindeki uyarı ile ilgili detaylar aşağıdadır:";
-                //icerik += "<br/>Detaylarını görmek ve uygulamaya gitmek için <a  target=\"_blank\" href=\"" + SABIT.URL.LOCAL + "/#/tahtalar/tahta/" + _tahta_id + "/uyarilar/sonuclar/" + _sonuc.UUID + "\">[BURAYA]</a> tıklayınız.";
-                //icerik += "<br/>Detaylarını görmek ve uygulamaya gitmek için <a  target=\"_blank\" href=\"" + SABIT.URL.LOCAL + "/#/tahtalar/" + _tahta_id + "/uyarilar/" + _uyari_id + "/sonuclar/" + "\">[BURAYA]</a> tıklayınız.";
-                icerik += "<br/>Uygulamaya gitmek için <a  target=\"_blank\" href=\"" + SABIT.URL.LOCAL + "/#/" + "\">[BURAYA]</a> tıklayınız.";
+                //icerik += "<br/>Detaylarını görmek ve uygulamaya gitmek için <a  target=\"_blank\" href=\"" + schema.SABIT.URL.LOCAL + "/#/tahtalar/tahta/" + _tahta_id + "/uyarilar/sonuclar/" + _sonuc.UUID + "\">[BURAYA]</a> tıklayınız.";
+                //icerik += "<br/>Detaylarını görmek ve uygulamaya gitmek için <a  target=\"_blank\" href=\"" + schema.SABIT.URL.LOCAL + "/#/tahtalar/" + _tahta_id + "/uyarilar/" + _uyari_id + "/sonuclar/" + "\">[BURAYA]</a> tıklayınız.";
+                icerik += "<br/>Uygulamaya gitmek için <a  target=\"_blank\" href=\"" + schema.SABIT.URL.LOCAL + "/#/" + "\">[BURAYA]</a> tıklayınız.";
                 icerik += "<hr/>";
 
                 var iSay = _sonuc.Data.length > 5 ? 5 : _sonuc.Data.length;
                 for (var i = 0; i < iSay; i++) {
 
                     icerik += "<br/>";
-                    if (_tipi == SABIT.TABLO_ADI.IHALE) {
+                    if (_tipi == schema.SABIT.TABLO_ADI.IHALE) {
 
                         var ihale = _sonuc.Data[i];
                         icerik += "<br/><b>Ihale No: </b>" + (ihale.IhaleNo || "");
@@ -492,7 +477,7 @@ function DB_UyariServisi() {
                         icerik += "<br/><b>Bölge Adı: </b>" + (ihale.BolgeAdi || "");
                         //icerik += "<br/><b>Şartname Adres: </b>" + (ihale.SartnameAdres || "");
                     }
-                    else if (_tipi == SABIT.TABLO_ADI.KALEM) {
+                    else if (_tipi == schema.SABIT.TABLO_ADI.KALEM) {
                         var kalem = _sonuc.Data[i];
                         icerik += "<br/><b>Sıra No: </b>" + (kalem.SiraNo || "");
                         icerik += "<br/><b>Açıklama: </b>" + (kalem.Aciklama || "");
@@ -500,7 +485,7 @@ function DB_UyariServisi() {
                         icerik += "<br/><b>Miktar: </b>" + (kalem.Miktar || "");
                         icerik += "<br/><b>Birim: </b>" + (kalem.Birim || "");
                     }
-                    else if (_tipi == SABIT.TABLO_ADI.URUN) {
+                    else if (_tipi == schema.SABIT.TABLO_ADI.URUN) {
                         var urun = _sonuc.Data[i];
                         icerik += "<br/><b>Kodu: </b>" + (urun.Kodu || "");
                         icerik += "<br/><b>Açıklama: </b>" + (urun.Aciklama || "");
@@ -508,17 +493,17 @@ function DB_UyariServisi() {
                         icerik += "<br/><b>Fiyat: </b>" + (urun.Fiyat || "");
                         icerik += "<br/><b>Para Birim: </b>" + (urun.ParaBirim_Id || "");
                     }
-                    else if (_tipi == SABIT.TABLO_ADI.KURUM) {
+                    else if (_tipi == schema.SABIT.TABLO_ADI.KURUM) {
                         var kurum = _sonuc.Data[i];
                         icerik += "<br/><b>Adı: </b>" + (kurum.Adi || "");
                         icerik += "<br/><b>Ticari Unvan: </b>" + (kurum.TicariUnvan || "");
                         icerik += "<br/><b>Statü: </b>" + (kurum.Statu || "");
                         icerik += "<br/><b>Tel1: </b>" + (kurum.Tel1 || "");
                     }
-                    else if (_tipi == SABIT.TABLO_ADI.TEKLIF) {
+                    else if (_tipi == schema.SABIT.TABLO_ADI.TEKLIF) {
                         var teklif = _sonuc.Data[i],
                             pb = teklif.ParaBirim_Id > 0
-                                ? (SABIT.PARA_BIRIMLERI.whereX("Id", teklif.ParaBirim_Id).Adi)
+                                ? (schema.SABIT.PARA_BIRIMLERI.whereX("Id", teklif.ParaBirim_Id).Adi)
                                 : "";
 
                         icerik += "<br/><b>Kalem: </b>" + (teklif.Kalem && teklif.Kalem.Aciklama || "");
@@ -540,22 +525,22 @@ function DB_UyariServisi() {
 
         var ids = f_uye_id_array(_uyari);
 
-        var arr = _sonuc.Data.map(function (_elm) {
-            var detay = f_detay_olustur(SABIT.UYARI.MAIL, _uyari, _elm);
+        return _sonuc.Data.map(function (_elm) {
+            var detay = f_detay_olustur(schema.SABIT.UYARI.MAIL, _uyari, _elm);
             return f_db_uyari_sonucu_ekle(detay)
                 .then(function (_sonuc_id) {
-                    return ids.map(function (_id) {
-                        return db_ileti.f_db_ileti_ekle(_id, _sonuc_id);
-                    });
+                    var db_ileti = require('./db_ileti');
+                    return ids.mapX(null, db_ileti.f_db_ileti_ekle, _sonuc_id).allX();
                 });
-        });
-
-        return result.dbQ.Q.all(arr);
+        }).allX();
     };
 
     var f_mail_secildi = function (_uyari) {
         var defer = result.dbQ.Q.defer();
         l.info("f_mail_secildi");
+
+        var EMail = require('../lib/email'),
+            mail = new EMail("", "", "", true);
 
         f_mail_uyari_sonucu_olustur(_uyari.Tahta_Id, _uyari.RENDER.Tipi, _uyari.RENDER.Uyeler, _uyari.RENDER.Sonuc, _uyari)
             .then(function () {
@@ -615,7 +600,7 @@ function DB_UyariServisi() {
     var f_elastic_sorgula = function (_tipi, _query, _size, _from) {
         return elastic.f_search({
             method: "POST",
-            index: SABIT.ELASTIC.INDEKS.APP,
+            index: schema.SABIT.ELASTIC.INDEKS.APP,
             type: _tipi,
             body: _query,
             size: _size,
@@ -633,6 +618,8 @@ function DB_UyariServisi() {
     var f_role_bagli_uyeler = function (_tahta_id, _rol_ids, _uyari) {
         //o role sahip üyeleri çekeceğiz
         l.info("---------f_role_bagli_uyeler-----------")
+
+        var db_tahta = require('./db_tahta');
 
         var defer = result.dbQ.Q.defer(),
             arrPromise = _rol_ids.map(function (_elm) {
@@ -733,6 +720,7 @@ function DB_UyariServisi() {
                 var tipi = f_elastic_tipi(alert.Olay);
                 alert.RENDER.Tipi = tipi;
 
+                var db_ihale = require('./db_ihale');
                 return db_ihale.f_db_tahta_ihale_idler_aktif(alert.Tahta_Id)
                     .then(function (_idler) {
                         if (_idler && _idler != null) {
@@ -793,6 +781,7 @@ function DB_UyariServisi() {
             l.info("------------------ f_ES_hazirla_kalem_durumuna_gore -------------- > " + alert.Olay);
             alert.RENDER.Tipi = tipi;
 
+            var db_kalem = require('./db_kalem');
             return db_kalem.f_db_tahta_kalem_idler_aktif(alert.Tahta_Id)
                 .then(function (_idler) {
                     if (_idler && _idler != null) {
@@ -845,6 +834,7 @@ function DB_UyariServisi() {
             l.info("------------------ f_ES_hazirla_teklif_durumuna_gore -------------- > " + alert.Olay);
             alert.RENDER.Tipi = tipi;
 
+            var db_tahta = require('./db_tahta');
             return db_tahta.f_db_tahta_teklif_idleri(alert.Tahta_Id)
                 .then(function (_idler) {
                     if (_idler && _idler != null) {
@@ -916,24 +906,24 @@ function DB_UyariServisi() {
             //bu durumda elastic sorgusunu diğerlerinde göre daha farklı oluşturmalıyız
 
             switch (alert.Olay) {
-                case SABIT.OLAY.IHALE_TARIHI_X_GUN_KALA:
+                case schema.SABIT.OLAY.IHALE_TARIHI_X_GUN_KALA:
                     promise = this.f_ES_hazirla_ihale_tarihine_x_gun_kala();
                     break;
 
-                case SABIT.OLAY.KALEM_KATILIYORUZ:
-                case SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
-                case SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
-                case SABIT.OLAY.KALEM_ITIRAZ_KABUL:
-                case SABIT.OLAY.KALEM_ITIRAZ_RED:
-                case SABIT.OLAY.KALEM_IPTAL:
+                case schema.SABIT.OLAY.KALEM_KATILIYORUZ:
+                case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILECEK:
+                case schema.SABIT.OLAY.KALEM_ITIRAZ_EDILDI:
+                case schema.SABIT.OLAY.KALEM_ITIRAZ_KABUL:
+                case schema.SABIT.OLAY.KALEM_ITIRAZ_RED:
+                case schema.SABIT.OLAY.KALEM_IPTAL:
                     promise = this.f_ES_hazirla_kalem_durumuna_gore();
                     break;
 
-                case SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
-                case SABIT.OLAY.TEKLIF_IPTAL:
-                case SABIT.OLAY.TEKLIF_KAZANDI:
-                case SABIT.OLAY.TEKLIF_URUN_BELGESI_EKSIK:
-                case SABIT.OLAY.TEKLIF_URUNU_REDDEDILDI:
+                case schema.SABIT.OLAY.TEKLIF_IHALEDEN_ATILDI:
+                case schema.SABIT.OLAY.TEKLIF_IPTAL:
+                case schema.SABIT.OLAY.TEKLIF_KAZANDI:
+                case schema.SABIT.OLAY.TEKLIF_URUN_BELGESI_EKSIK:
+                case schema.SABIT.OLAY.TEKLIF_URUNU_REDDEDILDI:
                     promise = this.f_ES_hazirla_teklif_durumuna_gore();
                     break;
 
@@ -956,13 +946,13 @@ function DB_UyariServisi() {
             if (alert.RENDER.ElasticQuery != null) {
                 elastic.f_search({
                     method: "POST",
-                    index: SABIT.ELASTIC.INDEKS.APP,
+                    index: schema.SABIT.ELASTIC.INDEKS.APP,
                     type: alert.RENDER.Tipi,
                     body: alert.RENDER.ElasticQuery
                 }).then(function (_resp) {
 
                     alert.RENDER.Sonuc.Toplam = _resp[0].hits.total;
-                    alert.RENDER.Sonuc.Data = _.pluck(_resp[0].hits.hits, "_source");
+                    alert.RENDER.Sonuc.Data = _.map(_resp[0].hits.hits, "_source");
 
                     defer.resolve(_resp[0]);
                 });
@@ -987,30 +977,44 @@ function DB_UyariServisi() {
 
                 alert.RENDER.Uyeler.id_listesi.push(alert.Uye_Idler);
 
-                db_kullanici.f_db_uye_idler(alert.Uye_Idler, alert.Tahta_Id)
+                var db_kullanici = require('./db_kullanici');
+                db_kullanici.f_db_uye_id(alert.Uye_Idler, alert.Tahta_Id)
                     .then(function (_uyeler) {
+                        if (_uyeler && _uyeler.length > 0) {
+                            //üye bilgilerini topla
 
-                        var arrPromises = _uyeler.map(function (_uye) {
-                            if (_uye) {
+                            alert.RENDER.Uyeler.uye_listesi = _uyeler;
+                            alert.RENDER.Uyeler.mail_listesi = _uyeler.pluckX("EPosta");
+                            alert.RENDER.Uyeler.gsm_listesi = _uyeler.pluckX("GSM");
 
-                                alert.RENDER.Uyeler.uye_listesi.push(_uye);
+                            console.log("alert.RENDER.Uyeler>" + JSON.stringify(alert.RENDER.Uyeler));
+                            defer.resolve(alert.RENDER.Uyeler);
 
-                                if (_uye.EPosta) {
-                                    alert.RENDER.Uyeler.mail_listesi.push(_uye.EPosta);
-                                }
+                        } else {
+                            defer.resolve(null);
+                        }
 
-                                if (_uye.GSM) {
-                                    alert.RENDER.Uyeler.gsm_listesi.push(_uye.GSM);
-                                }
-                            }
-                            return _uye;
-                        });
+                        /*   var arrPromises = _uyeler.map(function (_uye) {
+                         if (_uye) {
 
-                        result.dbQ.Q.all(arrPromises)
-                            .then(function () {
-                                console.log("alert.RENDER.Uyeler>" + JSON.stringify(alert.RENDER.Uyeler));
-                                defer.resolve(alert.RENDER.Uyeler);
-                            });
+                         alert.RENDER.Uyeler.uye_listesi.push(_uye);
+
+                         if (_uye.EPosta) {
+                         alert.RENDER.Uyeler.mail_listesi.push(_uye.EPosta);
+                         }
+
+                         if (_uye.GSM) {
+                         alert.RENDER.Uyeler.gsm_listesi.push(_uye.GSM);
+                         }
+                         }
+                         return _uye;
+                         });
+
+                         result.dbQ.Q.all(arrPromises)
+                         .then(function () {
+                         console.log("alert.RENDER.Uyeler>" + JSON.stringify(alert.RENDER.Uyeler));
+                         defer.resolve(alert.RENDER.Uyeler);
+                         });*/
                     });
 
             } else {
@@ -1082,7 +1086,7 @@ function DB_UyariServisi() {
                 //hangi işlemler tanımlandı ise kişilere uygulayacağız
 
                 var arrPromiseIslemler = alert.Islemler.map(function (_islem) {
-                    if (_islem == SABIT.UYARI.MAIL) {
+                    if (_islem == schema.SABIT.UYARI.MAIL) {
                         //mail seçilmiş tüm kişilere mail at
                         if (alert.RENDER.Uyeler.mail_listesi.length > 0) {
                             return f_mail_secildi(alert);
@@ -1090,12 +1094,12 @@ function DB_UyariServisi() {
                             alert.RENDER.Hata.push({id: 0, alert: alert, mesaj: "Uyarı gönderilecek üye bilgisi olmadığı için mail gönderilemedi!"});
                         }
                     }
-                    else if (_islem == SABIT.UYARI.SMS) {
+                    else if (_islem == schema.SABIT.UYARI.SMS) {
                         //sms gönderilmesi istenmiş
                         //_kullanicilar.gsm_listesi;
                         return null;
                     }
-                    else if (_islem == SABIT.UYARI.ALERT) {
+                    else if (_islem == schema.SABIT.UYARI.ALERT) {
                         //kullanıcı giriş yaptığında haberlerinde göstereceğiz
 
                         if (alert.RENDER.Uyeler.id_listesi.length > 0) {
@@ -1104,7 +1108,7 @@ function DB_UyariServisi() {
                             alert.RENDER.Hata.push({id: 0, alert: alert, mesaj: "Uyarı gönderilecek üye bilgisi olmadığı için alert eklenemedi!"});
                         }
                     }
-                    else if (_islem == SABIT.UYARI.TODO) {
+                    else if (_islem == schema.SABIT.UYARI.TODO) {
                         //kullanıcının yapılacaklar (to-do) listesine iş düşür
                         if (alert.RENDER.Uyeler.id_listesi.length > 0) {
                             return f_todo_secildi(alert);
@@ -1142,11 +1146,11 @@ function DB_UyariServisi() {
             //gelen uyarı to-do (görev) şeklinde tanımlandı ise ve tipi ihale ise
             //ihale bilgilerine göre google takvime ekliyoruz
             var todo = alert.Islemler.filter(function (_elm) {
-                return _elm == SABIT.UYARI.TODO;
+                return _elm == schema.SABIT.UYARI.TODO;
             });
 
             if (todo && todo.length > 0) {
-                if (alert.RENDER.Tipi.indexOf(SABIT.TABLO_ADI.IHALE) != -1) {
+                if (alert.RENDER.Tipi.indexOf(schema.SABIT.TABLO_ADI.IHALE) != -1) {
                     //bu kayıtlı uyarı ihale işlemi
                     //google calendar a eklemeye başla
                     l.info("******google calendar a eklemeye başla************");
@@ -1159,6 +1163,8 @@ function DB_UyariServisi() {
                     opt.bRolleri = false;
                     opt.bUyeleri = false;
                     opt.bAjanda = true;
+
+                    var db_tahta = require('./db_tahta');
 
                     db_tahta.f_db_tahta_id(alert.Tahta_Id, opt)
                         .then(function (_dbTahta) {
@@ -1228,7 +1234,7 @@ function DB_UyariServisi() {
                     if (_err.id != 100) {
                         // hata oluştu logla
                     }
-                    l.e(self.alert.Olay + " için f_calis metodunda hata alındı: " + JSON.stringify(_err));
+                    l.e(self.alert.Olay + " için f_calis metodunda hata alındı: " + _err);
                     l.e(_err);
                 });
         };
@@ -1245,27 +1251,31 @@ function DB_UyariServisi() {
 
         var defer = result.dbQ.Q.defer();
 
+        var db_olay = require('./db_olay'),
+            db_uyari = require('./db_uyari');
+
         result.dbQ.Q.all([
             db_olay.f_db_tetiklenecek_olay_tumu(),
             db_uyari.f_db_uyarilar_tumu()
         ]).then(function (_results) {
 
-            // TODO: Redis üstünden OLAY'la ilintili UYARILARI çekmek için genel bir SET ve içine UYARI_ID leri konulabilir > uyarilar:OLAYLAR:IHALE:EKLENDI > 1,4,6,7
-            // TODO: HMGET uyarilari (SMEMBERS uyarilar:OLAYLAR:IHALE:EKLENDI)
-            arrTetiklenecekOlaylar = _results[0];
-            arrUyarilar = _results[1];
+                // TODO: Redis üstünden OLAY'la ilintili UYARILARI çekmek için genel bir SET ve içine UYARI_ID leri konulabilir > uyarilar:OLAYLAR:IHALE:EKLENDI > 1,4,6,7
+                // TODO: HMGET uyarilari (SMEMBERS uyarilar:OLAYLAR:IHALE:EKLENDI)
+                arrTetiklenecekOlaylar = _results[0];
+                arrUyarilar = _results[1];
 
-            l.info("tetiklenecekler: %s \nuyarılar: %s", JSON.stringify(arrTetiklenecekOlaylar), JSON.stringify(arrUyarilar));
+                l.info("tetiklenecekler: %s \nuyarılar: %s", JSON.stringify(arrTetiklenecekOlaylar), JSON.stringify(arrUyarilar));
 
-            var arrPromises = arrTetiklenecekOlaylar.map(f_olayi_tetikle);
-            result.dbQ.Q.all(arrPromises)
-                .then(function () {
-                    defer.resolve("gönderdim");
-                });
+                var arrPromises = arrTetiklenecekOlaylar.map(f_olayi_tetikle);
+                result.dbQ.Q.all(arrPromises)
+                    .then(function () {
+                        defer.resolve("gönderdim");
+                    });
 
-        }).fail(function (_err) {
-            defer.reject({id: 0, mesaj: "uyarılar çekilemedi.Hata alındı:" + _err});
-        });
+            })
+            .fail(function (_err) {
+                defer.reject({id: 0, mesaj: "uyarılar çekilemedi.Hata alındı:" + _err});
+            });
 
         return defer.promise;
     };

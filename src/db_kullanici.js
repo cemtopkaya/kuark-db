@@ -1,3 +1,11 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    schema = require("kuark-schema"),
+    emitter = new (require('events').EventEmitter)(),
+    extension = require('kuark-extensions'),
+    _ = require('lodash');
+
 /**
  * Fonksiyon parametrelerini kullanım örneği code intellisense
  * Kullanıcıya ait aktif/pasif tahtaları getirir.
@@ -107,27 +115,16 @@ function DB_Kullanici() {
     /**
      * Kullanıcı tahtalarını dizi içinde nesneler olarak dönecektir
      * @param {integer} _kul_id
-     * @param {OptionsTahta} _opts
+     * @param {OptionsTahta=} _opts
      * @returns {Promise}
      */
     function f_db_kullanici_tahtalari(_kul_id, _opts) {
-        /** @type {OptionsTahta} */
-        var opts = db.tahta.OptionsTahta(_opts);
-
-        //ssg = [{"f_db_kullanici_tahtalari": _kul_id}];
 
         return f_db_kullanici_tahta_idleri(_kul_id)
             .then(function (_dbArrTahtaId) {
-                var sonuc;
-
-                //ssg = [{"Oncesi _dbArrTahtaId": _dbArrTahtaId}];
-
-                sonuc = _dbArrTahtaId
-                    .mapX(null, db.tahta.f_db_tahta_id, opts)
-                    .allX();
-
-                //console.log("typeof sonuc: ", typeof sonuc);
-                return sonuc;
+                //console.log = "Oncesi _dbArrTahtaId": _dbArrTahtaId;
+                var db_tahta = require('./db_tahta');
+                return db_tahta.f_db_tahta_id(_dbArrTahtaId, _opts);
             });
     }
 
@@ -262,7 +259,7 @@ function DB_Kullanici() {
 
     /**
      * Kullanıcı ve profil bilgilerinin çekilmesi sağlanır
-     * @param kul_id
+     * @param _kul_id
      * @param {OptionsKullanici=} _opts, Kullanıcı bilgilerinin detaylarını çekip çekmemek için ayarları içerir
      * @returns {Promise}
      */
@@ -308,16 +305,15 @@ function DB_Kullanici() {
                 }
 
                 /** @type {Kullanici} */
-                var kullanici = schema.f_create_default_object(SABIT.SCHEMA.KULLANICI);
+                var kullanici = schema.f_create_default_object(schema.SCHEMA.KULLANICI);
 
                 // 1
-                extend(kullanici, _dbReplies[0]);
+                _.extend(kullanici, _dbReplies[0]);
                 // 2
                 kullanici.Profil = _dbReplies[1];
 
                 // 4
                 kullanici.OturumDurumu = parseInt(_dbReplies[3]);
-
 
                 // 3
                 var arrKullaniciTahtaIdleri = _dbReplies[2];
@@ -327,12 +323,10 @@ function DB_Kullanici() {
                 }
 
                 return arrKullaniciTahtaIdleri
-                    .mapX(null, f_db_kullanici_tahtalari, opts.Tahtalari)
-                    .allX()
+                    .mapX(null, f_db_kullanici_tahtalari, opts.Tahtalari).allX()
                     .then(function (_arrTahtalari) {
                         kullanici.Tahtalari = _arrTahtalari;
 
-                        ssg = [{"DB_REPLY_kullanici": kullanici}];
                         return kullanici;
                     });
             })
@@ -346,57 +340,79 @@ function DB_Kullanici() {
      * Kullanıcının bilgileri Tahta Üyesi olma durumuna göre çeker
      * @param {integer} _uye_id
      * @param {integer} _tahta_id
-     * @param {OptionsUye} _opts
+     * @param {OptionsUye=} _opts
      */
     function f_db_uye_id(_uye_id, _tahta_id, _opts) {
         // 1. Temel Tahta Üye bilgileri
         // 2. Tahtadaki rolleri
 
-        ssg = [{"f_db_uye_id": arguments}];
-
-
-        var kul_id = _uye_id,
-            tahta_id = _tahta_id;
 
         /** @type {OptionsUye} */
         var opts = result.OptionsUye(_opts);
 
-        /** @type {Uye} */
-        var uye = schema.f_create_default_object(SABIT.SCHEMA.UYE);
+        return (Array.isArray(_uye_id)
+            ? result.dbQ.hmget_json_parse(result.kp.kullanici.tablo, _uye_id)
+            : result.dbQ.hget_json_parse(result.kp.kullanici.tablo, _uye_id))
+            .then(function (_dbUye) {
+                if (!_dbUye) {
+                    return null;
+                }
 
-        return [
-            // 1
-            opts.bTemelTahtaUyeBilgileri
-                ? result.dbQ.hget_json_parse(result.kp.kullanici.tablo, kul_id)
-                : null,
-            // 2
-            opts.bArrTahtaUyeRolId && tahta_id
-                ? result.dbQ.hget_json_parse(result.kp.tahta.hsUyeleri(tahta_id), kul_id)
-                : null]
-            .allX()
-            .then(function (_dbReplies) {
-                ssg = [{"_dbReplies": _dbReplies}];
-                // 1
-                extend(uye, _dbReplies[0]);
+                function f_uye_bilgileri(_uye) {
+                    /** @type {Uye} */
+                    var olusan_uye = schema.f_create_default_object(schema.SCHEMA.UYE);
 
-                // 2
-                uye.Roller = _dbReplies[1];
+                    _.extend(olusan_uye, _uye);
 
-                return uye;
+                    if (_tahta_id) {
+                        //tahtaya bağlı üyelerin rollerini bul
+                        return [
+                            opts.bArrTahtaUyeRolId
+                                ? result.dbQ.hget_json_parse(result.kp.tahta.hsUyeleri(_tahta_id), _uye.Id)
+                                : []]
+                            .allX()
+                            .then(function (_dbReplies) {
+                                olusan_uye.Roller = _dbReplies[0];
+                                return olusan_uye;
+                            });
+                    } else {
+                        return olusan_uye;
+                    }
+                }
+
+                return (Array.isArray(_dbUye)
+                    ? _dbUye.map(f_uye_bilgileri).allX()
+                    : f_uye_bilgileri(_dbUye))
+                    .then(function (_olusan_uye) {
+                        return _olusan_uye;
+                    });
             });
+
+
+        /* /!** @type {Uye} *!/
+         var uye = schema.f_create_default_object(schema.SCHEMA.UYE);
+
+         return [
+         // 1
+         opts.bTemelTahtaUyeBilgileri
+         ? result.dbQ.hget_json_parse(result.kp.kullanici.tablo, _uye_id)
+         : null,
+         // 2
+         opts.bArrTahtaUyeRolId && _tahta_id
+         ? result.dbQ.hget_json_parse(result.kp.tahta.hsUyeleri(_tahta_id), _uye_id)
+         : null]
+         .allX()
+         .then(function (_dbReplies) {
+         extension.ssg = [{"_dbReplies": _dbReplies}];
+         // 1
+         _.extend(uye, _dbReplies[0]);
+
+         // 2
+         uye.Roller = _dbReplies[1];
+
+         return uye;
+         });*/
     }
-
-
-    /**
-     * Kullanıcının bilgileri Tahta Üyesi olma durumuna göre çeker
-     * @param {integer[]} _arr_idleri
-     * @param {integer} _tahta_id
-     * @param {OptionsUye=} _opts
-     */
-    function f_db_uye_idler(_arr_idleri, _tahta_id, _opts) {
-        return _arr_idleri.mapX(null, f_db_uye_id, _tahta_id, _opts).allX();
-    }
-
 
     /**
      * Birden fazla kullanıcı id için bilgilerinin oluşturulması sağlanır(kullanıcı genel ve profil bilgileri)
@@ -404,10 +420,7 @@ function DB_Kullanici() {
      * @returns {*}
      */
     function f_db_kullanici_idler(_arr_kullanici_idleri) {
-
-        ssg = [{"ARRAY > Bu kullanıcılar için üye bilgisi çekeceğiz > _arr_kullanici_idleri > ": _arr_kullanici_idleri}];
         return _arr_kullanici_idleri.mapX(null, f_db_kullanici_id).allX();
-
     }
 
 
@@ -557,7 +570,7 @@ function DB_Kullanici() {
 
                     return f_db_kullanici_id(kullanici.Id).then(function (_dbKullanici) {
                         //kullanıcı işlemleri için tetikle(elastic ekle..vb)
-                        emitter.emit(SABIT.OLAY.KULLANICI_EKLENDI, kullanici);
+                        emitter.emit(schema.SABIT.OLAY.KULLANICI_EKLENDI, kullanici);
                         return _dbKullanici;
                     });
 
@@ -584,7 +597,7 @@ function DB_Kullanici() {
             result.dbQ.hset(result.kp.kullanici.tablo, kullanici.Id, JSON.stringify(kullanici))
         ].allX().then(function () {
 
-            emitter.emit(SABIT.OLAY.KULLANICI_GUNCELLENDI, kullanici);
+            emitter.emit(schema.SABIT.OLAY.KULLANICI_GUNCELLENDI, kullanici);
             return f_db_kullanici_id(kullanici.Id);
         });
     }
@@ -592,7 +605,7 @@ function DB_Kullanici() {
     function f_db_kullanici_sil(kullanici_id) {
         if (kullanici_id) {
 
-            emitter.emit(SABIT.OLAY.KULLANICI_SILINDI, kullanici_id);
+            emitter.emit(schema.SABIT.OLAY.KULLANICI_SILINDI, kullanici_id);
 
             return result.dbQ.sadd(result.kp.kullanici.ssetSilinen, kullanici_id);
 
@@ -625,7 +638,6 @@ function DB_Kullanici() {
         f_db_kullanici_tumu_idye_gore: f_db_kullanici_tumu_idye_gore,
         f_db_kullanici_idler: f_db_kullanici_idler,
         f_db_kullanici_id: f_db_kullanici_id,
-        f_db_uye_idler: f_db_uye_idler,
         f_db_uye_id: f_db_uye_id,
         // kullanıcı_id from provider_id
         f_eposta_to_db_kullanici_id: f_eposta_to_db_kullanici_id,
@@ -649,7 +661,7 @@ function DB_Kullanici() {
          */
         OptionsKullanici: function (opts) {
             /** @class OptionsKullanici */
-            return extend({
+            return _._.extend({
                 barrTahtaIds: true,
                 bTahtalari: true,
                 bProfil: true,
@@ -662,7 +674,6 @@ function DB_Kullanici() {
                     bRolleri: true,
                     bUyeleri: true,
                     optUye: {
-                        bTemelTahtaUyeBilgileri: true,
                         bArrTahtaUyeRolId: true
                     }
                 }
@@ -675,8 +686,8 @@ function DB_Kullanici() {
          */
         OptionsUye: function (opts) {
             /** @class OptionsUye */
-            return extend({
-                bTemelTahtaUyeBilgileri: true,
+            return _._.extend({
+                //bTemelTahtaUyeBilgileri: true,
                 bArrTahtaUyeRolId: true
             }, opts || {})
         }

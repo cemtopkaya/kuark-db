@@ -1,3 +1,13 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    schema = require('kuark-schema'),
+    exception = require('kuark-istisna'),
+    emitter = new (require('events').EventEmitter)(),
+    extensions = require('kuark-extensions'),
+    _ = require('lodash');
+
+
 /**
  * <pre>Ihaleler ekleme:
  *  HS > Ihale                  : TÜM İHALELER bu hash içinde olacak(tahtanın ya da genelin).
@@ -30,56 +40,57 @@ function DB_Ihale() {
 
     var result = {};
 
-
     //region TAHTALAR ARASI İHALE PAYLAŞ
     /**
      * Tahtalar arasında özel ihalelerin paylaşılması sağlanır.
-     * @param {{From:int, To:int[], Ids: int[]}} _paylas
+     * @param {{From:integer, To:integer[], Ids: integer[]}} _paylas
      * @returns {*}
      */
     var f_db_ihale_paylas = function (_paylas) {
-        if (Array.isArray(_paylas.To) && _paylas.To.length > 0) {
-            var arr = _paylas.To.map(function (_tahta_id) {
-                return f_ihale_paylas(_paylas.From, _tahta_id, _paylas.Ids);
+
+        /**
+         *
+         * @param {integer} _from
+         * @param {integer|integer[]} _to
+         * @param {integer[]} _ids
+         * @returns {*}
+         */
+        var f_ihale_paylas = function (_from, _to, _ids) {
+            //ihaleler paylaşılırken tüm ihale ve ihaleye ait  kalemler paylaşılacaktır
+            return result.dbQ.Q.all([
+                result.dbQ.del(result.kp.temp.ssetTahtaIhale(_to)),
+                result.dbQ.sadd(result.kp.tahta.ssetOzelIhaleleri(_to, true), _ids)
+            ]).then(function () {
+
+                var arr = _ids.mapXU(function (_ihale_id) {
+                    return result.dbQ.smembers(result.kp.ihale.ssetKalemleri(_ihale_id))
+                        .then(function (_arrKalem_Id) {
+                            l.info("_arrKalem_Id: " + _arrKalem_Id);
+
+                            // Eğer ihalenin kalemi yoksa, dön
+                            if (_arrKalem_Id.length == 0) {
+                                return 1;
+                            }
+
+                            //kalemleri varsa tahta ile ilişkilendir
+                            return result.dbQ.sadd(result.kp.tahta.ssetOzelKalemleri(_to, _ihale_id, true), _arrKalem_Id);
+                        });
+                });
+                return result.dbQ.Q.all(arr);
             });
-            return result.dbQ.Q.all(arr);
+        };
+
+        if (Array.isArray(_paylas.To) && _paylas.To.length > 0) {
+            return _paylas.To.map(function (_tahta_id) {
+                return f_ihale_paylas(_paylas.From, _tahta_id, _paylas.Ids);
+            }).allX();
 
         } else {
             return f_ihale_paylas(_paylas.From, _paylas.To, _paylas.Ids);
         }
     };
 
-    /**
-     *
-     * @param {integer} _from
-     * @param {integer} _to
-     * @param {integer[]} _ids
-     * @returns {*}
-     */
-    var f_ihale_paylas = function (_from, _to, _ids) {
-        //ihaleler paylaşılırken tüm ihale ve ihaleye ait  kalemler paylaşılacaktır
-        return result.dbQ.Q.all([
-            result.dbQ.del(result.kp.temp.ssetTahtaIhale(_to)),
-            result.dbQ.sadd(result.kp.tahta.ssetOzelIhaleleri(_to, true), _ids)
-        ]).then(function () {
 
-            var arr = _ids.mapXU(function (_ihale_id) {
-                return result.dbQ.smembers(result.kp.ihale.ssetKalemleri(_ihale_id))
-                    .then(function (_arrKalem_Id) {
-                        l.info("_arrKalem_Id: " + _arrKalem_Id);
-
-                        // Eğer ihalenin kalemi yoksa, dön
-                        if (_arrKalem_Id.length == 0) {
-                            return 1;
-                        }
-
-                        //kalemleri varsa tahta ile ilişkilendir
-                        return result.dbQ.sadd(result.kp.tahta.ssetOzelKalemleri(_to, _ihale_id, true), _arrKalem_Id);
-                    });
-            });
-            return result.dbQ.Q.all(arr);
-        });
-    };
     //endregion
 
     var f_db_tahta_ihale_gruplama = function (_tahta_id, _kurum_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
@@ -107,13 +118,19 @@ function DB_Ihale() {
                     ? result.dbQ.zrangebyscore(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), _tarih1, _tarih2)
                     : result.dbQ.zrangebyscore(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id), "-inf", "+inf"))
                     .then(function (_ihale_idler) {
-                        if (_ihale_idler && _ihale_idler.length > 0) {
+                        if (Array.isArray(_ihale_idler) && _ihale_idler.length > 0) {
                             /** @type {OptionsIhale} */
                             var opts = {};
                             opts.bArrKalemleri = false;
                             opts.bYapanKurum = true;
                             opts.bTakip = true;
-                            return f_db_ihale_id(_ihale_idler, _tahta_id)
+                            /** @type {OptionsKalem} */
+                            //opts.optKalem = {};
+                            /*    opts.optKalem.bArrTeklifleri = false;
+                             opts.optKalem.bOnayDurumu = false;
+                             opts.optKalem.bTakiptemi = false;*/
+
+                            return f_db_ihale_id(_ihale_idler, _tahta_id, opts)
                                 .then(function (_ihaleler) {
                                     return _.sortBy(_ihaleler.groupX("IhaleTarihi", "Id"), "Key");
                                 });
@@ -135,7 +152,7 @@ function DB_Ihale() {
     var f_db_ihale_tarihine_gore_grupla = function (_tahta_id, _tarih1, _tarih2) {
         return f_db_ihale_tumu_tarih_araligindakiler(_tahta_id, _tarih1, _tarih2)
             .then(function (_ihaleler) {
-                if (_ihaleler && _ihaleler.length > 0) {
+                if (Array.isArray(_ihaleler) && _ihaleler.length > 0) {
                     return _.sortBy(_ihaleler.groupX("IhaleTarihi", "Id"), "Key");
                 } else {
                     return [];
@@ -155,13 +172,13 @@ function DB_Ihale() {
         console.log("f_db_ihale_tumu_tarih_araligindakiler")
         return f_db_ihale_idler_aktif_tarih_araligindakiler(_tahta_id, _tarih1, _tarih2)
             .then(function (_ihale_idler) {
-                console.log("f_db_ihale_tumu_tarih_araligindakiler _ihale_idler.length>" + _ihale_idler.length)
-                if (_ihale_idler && _ihale_idler.length > 0) {
+                if (Array.isArray(_ihale_idler) && _ihale_idler.length > 0) {
                     /** @type {OptionsIhale} */
                     var opts = {};
                     opts.bArrKalemleri = true;
                     opts.bYapanKurum = true;
                     opts.bTakip = true;
+                    opts.optKalem = {};
                     opts.optKalem.bArrTeklifleri = false;
                     opts.optKalem.bOnayDurumu = true;
                     opts.optKalem.bTakiptemi = true;
@@ -194,7 +211,7 @@ function DB_Ihale() {
                         return result.dbQ.zrangebyscore(result.kp.temp.zsetTahtaIhaleTarihineGore(_tahta_id), tarih1, tarih2);
                     })
                     .then(function (_ihale_idler) {
-                        if (_ihale_idler && _ihale_idler.length > 0) {
+                        if (Array.isArray(_ihale_idler) && _ihale_idler.length > 0) {
                             return _ihale_idler;
                         } else {
                             return [];
@@ -209,47 +226,36 @@ function DB_Ihale() {
     var f_db_ihale_teklif_idleri = function (_tahta_id, _ihale_id, _sayfalama) {
         var defer = result.dbQ.Q.defer();
 
-        var multi = result.rc.multi(),
-            sonucAnahtari = result.kp.temp.ssetTahtaIhaleTeklifleri(_tahta_id, _ihale_id);
+        var sonucAnahtari = result.kp.temp.ssetTahtaIhaleTeklifleri(_tahta_id, _ihale_id);
 
         result.dbQ.exists(sonucAnahtari)
             .then(function (_iExist) {
-
-                if (_iExist) {
+                return _iExist
                     //temp anahtarı var yeniden çekmeye gerek yok, teklif bilgilerini dön
-                } else {
+                    ? 1
                     //temp anahtarı yok oluştur ve teklif bilgilerini dön
+                    : result.dbQ.sinterstore(sonucAnahtari, result.kp.ihale.ssetTeklifleri(_ihale_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true));
+            })
+            .then(function () {
+                var baslangic = 0,
+                    bitis = 10;
 
-                    multi.sinterstore(sonucAnahtari, result.kp.ihale.ssetTeklifleri(_ihale_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true));
+                if (_sayfalama) {
+                    baslangic = _sayfalama.Sayfa * _sayfalama.SatirSayisi,
+                        bitis = _sayfalama.SatirSayisi;
                 }
 
-                multi.exec(function (err, replies) {
-                    if (err) {
-                        l.e("Teklifler çekilemedi. MULTI ERROR: " + err);
-                        defer.reject(err);
-                    }
-                    l.info("MULTI REPLY:" + replies);
-
-                    var baslangic = 0,
-                        bitis = 10;
-
-                    if (_sayfalama) {
-                        baslangic = _sayfalama.Sayfa * _sayfalama.SatirSayisi,
-                            bitis = _sayfalama.SatirSayisi;
-                    }
-
-                    (_sayfalama
-                        ? result.dbQ.sort(sonucAnahtari, "LIMIT", baslangic, bitis)
-                        : result.dbQ.smembers(sonucAnahtari))
-                        .then(function (_dbReply) {
-                            defer.resolve(_dbReply);
-                        }).fail(function (_err) {
+                (_sayfalama
+                    ? result.dbQ.sort(sonucAnahtari, "LIMIT", baslangic, bitis)
+                    : result.dbQ.smembers(sonucAnahtari))
+                    .then(function (_dbReply) {
+                        defer.resolve(_dbReply);
+                    })
+                    .fail(function (_err) {
                         l.e("İhale teklifleri çekilemedi. Hata: " + _err);
                         defer.reject(_err);
                     });
-                });
             });
-
 
         return defer.promise;
     };
@@ -276,28 +282,36 @@ function DB_Ihale() {
 
                     var sonucAnahtari = result.kp.temp.ssetTahtaIhaleTeklifleri(_tahta_id, _ihale_id),
                         /** @type {LazyLoadingResponse} */
-                        sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
+                        sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
 
-                    return _teklif_idler.length == 0
-                        ? sonuc
-                        : result.dbQ.scard(sonucAnahtari)
-                        .then(function (_toplamKayitSayisi) {
-                            sonuc.ToplamKayitSayisi = parseInt(_toplamKayitSayisi);
+                    if (_teklif_idler && _teklif_idler.length > 0) {
+                        return result.dbQ.scard(sonucAnahtari)
+                            .then(function (_toplamKayitSayisi) {
+                                sonuc.ToplamKayitSayisi = parseInt(_toplamKayitSayisi);
 
-                            var db_teklif = require('./db_teklif');
-                            var opts = db_teklif.OptionsTeklif({
-                                bArrUrunler: true,
-                                bKalemBilgisi: true,
-                                bIhaleBilgisi: true,
-                                bKurumBilgisi: true
-                            });
-
-                            return db_teklif.f_db_teklif_id(_teklif_idler, _tahta_id, opts)
-                                .then(function (_dbTeklifler) {
-                                    sonuc.Data = _dbTeklifler;
-                                    return sonuc;
+                                var db_teklif = require('./db_teklif');
+                                var opts = db_teklif.OptionsTeklif({
+                                    bArrUrunler: true,
+                                    bKalemBilgisi: true,
+                                    bIhaleBilgisi: true,
+                                    bKurumBilgisi: true,
+                                    optUrun: {}
                                 });
-                        });
+
+                                return db_teklif.f_db_teklif_id(_teklif_idler, _tahta_id, opts)
+                                    .then(function (_dbTeklifler) {
+                                        //göndermeden önce sıralıyoruz
+                                        var teklifler = _.sortBy(_dbTeklifler, ['Kalem_Id', 'TeklifDurumu_Id']);
+                                        sonuc.Data = teklifler;
+                                        return sonuc;
+                                    });
+                            });
+                    } else {
+                        //teklif yok
+                        sonuc.ToplamKayitSayisi = 0;
+                        sonuc.Data = [];
+                        return sonuc;
+                    }
                 });
     };
 
@@ -472,114 +486,95 @@ function DB_Ihale() {
     var f_db_ihale_kalemleri_by_page = function (_ihale_id, _tahta_id, _arama) {
         l.info("f_db_ihale_kalemleri_by_page");
 
-        var baslangic = 0,
-            bitis = 10,
-            defer = result.dbQ.Q.defer(),
-            sonucAnahtari = result.kp.temp.zsetTahtaIhaleKalemleri(_tahta_id, _ihale_id);
-
-        if (_arama.Sayfalama) {
-            baslangic = _arama.Sayfalama.Sayfa * _arama.Sayfalama.SatirSayisi;
-            bitis = _arama.Sayfalama.SatirSayisi;
-        }
-
-        l.info("Baslangic: " + baslangic);
-        l.info("Bitis: " + bitis);
-
-
         //anahtar yok
         //ihalenin aktif kalem idlerini çek
         //sonuçta result.kp.temp.ssetTahtaIhaleKalemleri(_tahta_id, _ihale_id) anahtarı oluşmuş olacaktır
         //böylece sayfalama işlemine geçebiliriz
 
-        var defer_kriter;
-        if (_arama.Kriter == SABIT.URL_QUERY.KRITER.AKTIFLER) {
-            defer_kriter = db.ihale.f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id);
+        var defer = result.dbQ.Q.defer(),
+            defer_kriter = result.dbQ.Q.defer();
+
+        var sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
+
+        switch (_arama.Kriter) {
+            case schema.SABIT.URL_QUERY.KRITER.TAKIPTEKILER:
+            {
+                defer_kriter = f_db_ihale_tahtanin_takipteki_kalem_idleri(_ihale_id, _tahta_id);
+                break;
+            }
+            case schema.SABIT.URL_QUERY.KRITER.GIZLENENLER:
+            {
+                defer_kriter = f_db_ihale_tahtanin_gizlenen_kalem_idleri(_ihale_id, _tahta_id);
+                break;
+            }
+            case schema.SABIT.URL_QUERY.KRITER.AKTIFLER:
+            default:
+                defer_kriter = f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id);
+                break;
         }
-        else if (_arama.Kriter == SABIT.URL_QUERY.KRITER.TAKIPTEKILER) {
-            defer_kriter = db.ihale.f_db_ihale_tahtanin_takipteki_kalem_idleri(_ihale_id, _tahta_id);
-        }
-        else if (_arama.Kriter == SABIT.URL_QUERY.KRITER.GIZLENENLER) {
-            defer_kriter = db.ihale.f_db_ihale_tahtanin_gizlenen_kalem_idleri(_ihale_id, _tahta_id);
-        }
 
-        defer_kriter.then(function (_aktif_kalem_idler) {
+        defer_kriter.then(function (_cekilen_idler) {
+                if (!_cekilen_idler || _cekilen_idler.length == 0) {
 
-            /* f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id)
-             .then(function (_aktif_kalem_idler) {*/
-            console.log("kalem_idler ne geldi");
-            console.log(_aktif_kalem_idler);
+                    sonuc.ToplamKayitSayisi = 0;
+                    sonuc.Data = [];
+                    defer.resolve(sonuc);
+                } else {
 
-            //sayfalı çekebilmek için önce zset e eklemeliyiz
-            _aktif_kalem_idler.mapX(null, function (_id) {
-                db.redis.dbQ.zadd(sonucAnahtari, new Date().getTime(), _id);
-            }).allX()
-                .then(function () {
-                    return result.dbQ.zrangebyscore(sonucAnahtari, "-inf", "+inf", "LIMIT", baslangic, bitis)
-                        .then(
-                            /**
-                             *
-                             * @param {string[]} _kalem_idler
-                             */
-                            function (_kalem_idler) {
-                                var sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
-                                sonuc.ToplamKayitSayisi = _aktif_kalem_idler.length;
+                    sonuc.ToplamKayitSayisi = _cekilen_idler.length;
 
+                    //temp e ekle ve sonra da sil
+                    var temp_key = "temp_tahta_ihale_kalem_" + _ihale_id;
+                    result.dbQ.sadd(temp_key, _cekilen_idler)
+                        .then(function () {
 
-                                if (_kalem_idler && _kalem_idler.length > 0) {
-                                    var db_kalem = require('./db_kalem');
+                            var baslangic = 0,
+                                bitis = 10;
 
-                                    /** @type {OptionsKalem} */
-                                    var opt = {};
-                                    opt.bArrTeklifleri = false;
-                                    opt.bOnayDurumu = true;
-                                    opt.bTakiptemi = true;
+                            if (_arama.Sayfalama) {
+                                baslangic = _arama.Sayfalama.Sayfa * _arama.Sayfalama.SatirSayisi;
+                                bitis = _arama.Sayfalama.SatirSayisi;
+                            }
 
-                                    return db_kalem.f_db_kalem_id(_kalem_idler, _tahta_id, opt)
-                                        .then(function (_dbKalemler) {
-                                            console.log("_dbKalemler")
-                                            console.log(_dbKalemler);
-                                            sonuc.Data = [].concat(_dbKalemler);
-                                            return sonuc;
-                                        });
-                                } else {
-                                    sonuc.Data = [];
-                                    return sonuc;
-                                }
-                            });
-                })
-                .then(function (_resolveEdilecek) {
-                    defer.resolve(_resolveEdilecek);
-                })
-                .fail(function (_rejectEdilecek) {
-                    defer.reject(_rejectEdilecek);
-                })
-        });
+                            l.info("Baslangic: " + baslangic);
+                            l.info("Bitis: " + bitis);
 
+                            result.dbQ.sort(temp_key, "LIMIT", baslangic, bitis)
+                                .then(/**
+                                 *
+                                 * @param {string[]} _kalem_idler
+                                 */
+                                function (_kalem_idler) {
 
-        /*
+                                    //temp ile işimiz bitti sil
+                                    result.dbQ.del(temp_key);
 
-         result.dbQ.Q.all([
-         result.dbQ.sunionstore("temp_aktif", result.kp.ihale.ssetKalemleri(_ihale_id), result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, true)),
-         result.dbQ.sunionstore("temp_pasif", result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, false), result.kp.tahta.ssetEzilenKalemleri(_tahta_id), result.kp.tahta.ssetGizlenenKalemleri(_tahta_id)),
-         result.dbQ.sdiffstore(sonucAnahtari, "temp_aktif", "temp_pasif"),
-         result.dbQ.zunionstore(sonucAnahtari, "2", sonucAnahtari, "?"),
-         result.dbQ.zrangebyscore(sonucAnahtari, "-inf", "+inf", "LIMIT", baslangic, bitis)
-         ]).then(function (_ress) {
-         var sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
-         sonuc.ToplamKayitSayisi = _ress[3];
+                                    if (_kalem_idler && _kalem_idler.length > 0) {
+                                        var db_kalem = require('./db_kalem');
 
-         if (_ress[4] && _ress[4].length > 0) {
-         var db_kalem = require('./db_kalem');
-         db_kalem.f_db_kalem_id(_ress[4], _tahta_id)
-         .then(function (_dbKalemler) {
-         sonuc.Data = _dbKalemler;
-         defer.resolve(sonuc);
-         });
-         } else {
-         sonuc.Data = [];
-         defer.resolve(sonuc);
-         }
-         });*/
+                                        /** @type {OptionsKalem} */
+                                        var opt = {};
+                                        opt.bArrTeklifleri = false;
+                                        opt.bOnayDurumu = true;
+                                        opt.bTakiptemi = true;
+
+                                        db_kalem.f_db_kalem_id(_kalem_idler, _tahta_id, opt)
+                                            .then(function (_dbKalemler) {
+                                                sonuc.Data = [].concat(_dbKalemler);
+                                                defer.resolve(sonuc);
+                                            });
+                                    } else {
+                                        sonuc.Data = [];
+                                        defer.resolve(sonuc);
+                                    }
+                                });
+                        });
+                }
+
+            })
+            .fail(function (_err) {
+                defer.reject("İhaleye bağlı kalemler sayfalı çekilemedi!", "HATA MESAJI:" + _err);
+            });
 
         return defer.promise;
     };
@@ -625,8 +620,7 @@ function DB_Ihale() {
      */
     var f_db_ihale_id = function (_ihale_id, _tahta_id, _opts) {
 
-        var opts = result.OptionsIhale(_opts),
-            arrPromises = [];
+        var opts = result.OptionsIhale(_opts);
 
         return (Array.isArray(_ihale_id)
             ? result.dbQ.hmget_json_parse(result.kp.ihale.tablo, _ihale_id)
@@ -637,32 +631,52 @@ function DB_Ihale() {
                 } else {
 
                     var f_ihale_detaylarini_bagla = function (_ihale, _optsIhale) {
-                        var olusan_ihale = schema.f_create_default_object(SABIT.SCHEMA.IHALE);
-                        olusan_ihale = extend(olusan_ihale, _ihale);
 
-                        arrPromises.push(_optsIhale.bYapanKurum
-                            ? f_db_ihale_yapan_kurum(_ihale.Id)
-                            : {Id: 0});
+                        //ihale yoksa null dön
+                        if (!_ihale) {
+                            return null;
+                        }
 
-                        arrPromises.push(_optsIhale.bTakip
-                            ? result.dbQ.sismember(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id), _ihale.Id)
-                            : 0);
+                        var olusan_ihale = schema.f_create_default_object(schema.SCHEMA.IHALE);
+                        olusan_ihale = _.extend(olusan_ihale, _ihale);
 
-                        arrPromises.push(opts.bArrKalemleri
-                            ? f_db_ihale_kalem_tumu(_ihale.Id, _tahta_id, _optsIhale.optKalem)
-                            : [{Id: 0}]);
-
-                        return arrPromises.allX()
+                        return result.dbQ.Q.all([
+                                _optsIhale.bYapanKurum ? f_db_ihale_yapan_kurum(_ihale.Id) : {Id: 0},
+                                _optsIhale.bTakip ? result.dbQ.sismember(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id), _ihale.Id) : 0,
+                                opts.bArrKalemleri ? f_db_ihale_kalem_tumu(_ihale.Id, _tahta_id, _optsIhale.optKalem) : []])
                             .then(function (_arrResults) {
-
                                 olusan_ihale.Kurum = _arrResults[0];
-                                olusan_ihale.Kurum_Id = olusan_ihale.Kurum.Id;
                                 olusan_ihale.Takip = _arrResults[1];
                                 olusan_ihale.Kalemler = _arrResults[2];
                                 return olusan_ihale;
                             });
+
+                        /* arrPromises.push(_optsIhale.bYapanKurum
+                         ? f_db_ihale_yapan_kurum(_ihale.Id)
+                         : null);
+
+                         arrPromises.push(_optsIhale.bTakip
+                         ? result.dbQ.sismember(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id), _ihale.Id)
+                         : 0);
+
+                         arrPromises.push(opts.bArrKalemleri
+                         ? f_db_ihale_kalem_tumu(_ihale.Id, _tahta_id, _optsIhale.optKalem)
+                         : []);
+
+                         return arrPromises.allX()
+                         .then(function (_arrResults) {
+                         console.log("_arrResults")
+                         console.log(JSON.stringify(_arrResults))
+
+                         olusan_ihale.Kurum = _arrResults[0];
+                         //olusan_ihale.Kurum_Id = olusan_ihale.Kurum.Id;
+                         olusan_ihale.Takip = _arrResults[1];
+                         olusan_ihale.Kalemler = _arrResults[2];
+                         return olusan_ihale;
+                         });*/
                     };
 
+                    // Ihale dizimizin kurumlarını çekerek herbirine bağlayalım
                     if (Array.isArray(_dbIhale)) {
                         opts.bYapanKurum = false;
 
@@ -670,14 +684,13 @@ function DB_Ihale() {
                             .mapX(null, f_ihale_detaylarini_bagla, opts)
                             .allX()
                             .then(function (dbIhaleBilgilerle) {
-
                                 return f_db_ihale_yapan_kurum(_ihale_id)
                                     .then(function (dbYapanKurumlar) {
 
                                         dbIhaleBilgilerle.forEach(function (_elm, _idx, _arr) {
-                                            var kurum = dbYapanKurumlar[_idx];
-                                            _elm.Kurum = kurum;
-                                            _elm.Kurum_Id = kurum.Id;
+                                            if (_elm) {
+                                                _arr[_idx].Kurum = dbYapanKurumlar[_idx];
+                                            }
                                         });
 
                                         return dbIhaleBilgilerle;
@@ -769,7 +782,7 @@ function DB_Ihale() {
             })
             .fail(function (_err) {
                 l.e("ihaleler çekilemedi");
-                throw new exception.istisna("HATA FIRLATILDI", "Genel ihaleler çekilirken hata alındı:" + JSON.stringify(_err))
+                throw new exception.Istisna("HATA FIRLATILDI", "Genel ihaleler çekilirken hata alındı:" + _err)
             });
     };
 
@@ -851,6 +864,37 @@ function DB_Ihale() {
     };
 
     /**
+     * Arama kriterine göre (Aktif ihalaler, takip edilen ihaleler ya da gizlenen ihaleler) ihale_id lerini döneceğiz
+     * TODO: _arama'nın tipini doğru tayin etmeli
+     * @param {*} _arama
+     * @param {number} _tahta_id
+     * @returns {Promise}
+     */
+    function _f_arama_kriterinden_ihale_idleri(_arama, _tahta_id) {
+        // Validasyon
+        if (!_arama) throw exception.Istisna('Arama kriteri boş bırakılamaz!');
+        if (!_tahta_id) throw exception.Istisna('Tahta ID falsy olamaz!');
+
+        var defer_kriter = result.dbQ.Q.defer();
+
+        switch (_arama.Kriter) {
+
+            case schema.SABIT.URL_QUERY.KRITER.TAKIPTEKILER :
+                defer_kriter = f_db_ihale_tahtanin_takipteki_ihale_idleri(_tahta_id);
+                break;
+            case schema.SABIT.URL_QUERY.KRITER.GIZLENENLER :
+                defer_kriter = f_db_ihale_tahtanin_gizlenen_ihale_idleri(_tahta_id);
+                break;
+            case schema.SABIT.URL_QUERY.KRITER.AKTIFLER :
+            default:
+                defer_kriter = f_db_tahta_ihale_idler_aktif(_tahta_id);
+                break;
+        }
+
+        return defer_kriter.promise;
+    }
+
+    /**
      * Tahtanın ihalelerini sıralayarak ve sayfalayarak döner.
      * Tahtanın ihalelerini çek,
      * Sıralama türüne göre ihalelerin Sorted Set indeksiyle kesiştir
@@ -859,20 +903,17 @@ function DB_Ihale() {
      * @param _tahta_id
      * @param _arama
      * @param _opts
-     * @returns {*}
+     * @returns {Promise|LazyLoadingResponse}
      */
     var f_db_tahta_ihale_idler_sort_page = function (_tahta_id, _arama, _opts) {
-        l.info("f_db_tahta_ihale_idler_sort_page");
-        l.info(JSON.stringify(_opts));
 
         if (!_arama.Siralama || (Array.isArray(_arama.Siralama) && _arama.Siralama.length == 0 )) {
-            throw "Sıralama fonksiyonuna sıralama bilgisi olmadan gönderiyorsun. Kendine gel dostum!";
+            throw new exception.Istisna("Sıralama fonksiyonuna sıralama bilgisi olmadan gönderiyorsun. Kendine gel dostum!");
         }
 
         // Döneceğimiz verinin içinde toplam kayıt sayısı olacakki LAZY LOADING yapabilelim
         var baslangic = 0,
             bitis = 10,
-            defer = result.dbQ.Q.defer(),
             multi = result.rc.multi(),
             sonucAnahtari = result.kp.temp.zsetTahtaIhaleSiraliIhaleTarihineGore(_tahta_id);
 
@@ -884,70 +925,105 @@ function DB_Ihale() {
         l.info("Baslangic: " + baslangic);
         l.info("Bitis: " + bitis);
 
-        _arama.Siralama.forEach(function (_siralama) {
+        var defer_kriter = result.dbQ.Q.defer(),
+            defer = result.dbQ.Q.defer();
 
-            switch (_siralama.Alan) {
+        switch (_arama.Kriter) {
 
-                case SABIT.URL_QUERY.SORT.ihale.yapilmaTarihi:
-                    multi.zinterstore(sonucAnahtari, 2, result.kp.temp.ssetTahtaIhale(_tahta_id), result.kp.ihale.zsetYapilmaTarihi);
+            case schema.SABIT.URL_QUERY.KRITER.TAKIPTEKILER :
+                defer_kriter = f_db_ihale_tahtanin_takipteki_ihale_idleri(_tahta_id);
+                break;
+            case schema.SABIT.URL_QUERY.KRITER.GIZLENENLER :
+                defer_kriter = f_db_ihale_tahtanin_gizlenen_ihale_idleri(_tahta_id);
+                break;
+            case schema.SABIT.URL_QUERY.KRITER.AKTIFLER :
+            default:
+                defer_kriter = f_db_tahta_ihale_idler_aktif(_tahta_id);
+                break;
+        }
 
-                    _siralama.Asc
-                        ? multi.zrangebyscore(sonucAnahtari, _arama.Tarih.tarih1, _arama.Tarih.tarih2, "LIMIT", baslangic, bitis)
-                        : multi.zrevrangebyscore(sonucAnahtari, _arama.Tarih.tarih2, _arama.Tarih.tarih1, "LIMIT", baslangic, bitis);
+        defer_kriter.then(function (_donen_ihale_idleri) {
 
-                    break;
+            /** @type {LazyLoadingResponse} */
+            var sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
 
-                case SABIT.URL_QUERY.SORT.ihale.ihaleninSistemeEklenmeTarihi:
+            if (_donen_ihale_idleri && _donen_ihale_idleri.length == 0) {
+                sonuc.Data = [];
+                sonuc.ToplamKayitSayisi = 0;
+                defer.resolve(sonuc);
+            }
+            else {
+                //geçici temp e ekliyoruz sonra da sileceğiz
+                //neden?
+                //çünkü artık sadece aktif ihale idlerini değil
+                //takipteki aktif gizlenen..vb de de çekebiliriz.
+                var temp_key = "temp_tahta_ihale_" + _tahta_id;
+                result.dbQ.sadd(temp_key, _donen_ihale_idleri)
+                    .then(function (_iToplamKayit) {
+                        //region sıralama
+                        _arama.Siralama.forEach(function (_siralama) {
 
-                    multi.zinterstore(sonucAnahtari, 2, result.kp.temp.ssetTahtaIhale(_tahta_id), result.kp.ihale.zsetSistemeEklenmeTarihi);
+                            switch (_siralama.Alan) {
 
-                    _siralama.Asc
-                        ? multi.zrangebyscore(sonucAnahtari, _arama.Tarih.tarih1, _arama.Tarih.tarih2, "LIMIT", baslangic, bitis)
-                        : multi.zrevrangebyscore(sonucAnahtari, _arama.Tarih.tarih2, _arama.Tarih.tarih1, "LIMIT", baslangic, bitis);
+                                case schema.SABIT.URL_QUERY.SORT.ihale.yapilmaTarihi:
+                                    multi.zinterstore(sonucAnahtari, 2, temp_key, result.kp.ihale.zsetYapilmaTarihi);
 
-                    break;
+                                    _siralama.Asc
+                                        ? multi.zrangebyscore(sonucAnahtari, _arama.Tarih.tarih1, _arama.Tarih.tarih2, "LIMIT", baslangic, bitis)
+                                        : multi.zrevrangebyscore(sonucAnahtari, _arama.Tarih.tarih2, _arama.Tarih.tarih1, "LIMIT", baslangic, bitis);
+
+                                    break;
+
+                                case schema.SABIT.URL_QUERY.SORT.ihale.ihaleninSistemeEklenmeTarihi:
+
+                                    multi.zinterstore(sonucAnahtari, 2, temp_key, result.kp.ihale.zsetSistemeEklenmeTarihi);
+
+                                    _siralama.Asc
+                                        ? multi.zrangebyscore(sonucAnahtari, _arama.Tarih.tarih1, _arama.Tarih.tarih2, "LIMIT", baslangic, bitis)
+                                        : multi.zrevrangebyscore(sonucAnahtari, _arama.Tarih.tarih2, _arama.Tarih.tarih1, "LIMIT", baslangic, bitis);
+
+                                    break;
+                            }
+                        });
+                        //endregion
+
+                        //region multi exec
+                        multi.exec(function (_err, _replies) {
+
+                            sonuc.ToplamKayitSayisi = _iToplamKayit;
+
+                            //temp le işimiz bitti sil gitsin
+                            result.dbQ.del(temp_key);
+
+                            if (_replies[1] && _replies[1].length > 0) {
+                                f_db_ihale_id(_replies[1], _tahta_id, _opts)
+                                    .then(function (_ihaleler) {
+                                        sonuc.Data = _ihaleler;
+                                        defer.resolve(sonuc);
+                                    });
+                            } else {
+                                sonuc.Data = [];
+                                defer.resolve(sonuc);
+                            }
+                        });
+                        //endregion
+                    });
             }
         });
-
-
-        var defer_kriter;
-        if (_arama.Kriter == SABIT.URL_QUERY.KRITER.AKTIFLER) {
-            defer_kriter = f_db_tahta_ihale_idler_aktif(_tahta_id)
-        }
-        else if (_arama.Kriter == SABIT.URL_QUERY.KRITER.TAKIPTEKILER) {
-            defer_kriter = f_db_ihale_tahtanin_takipteki_ihale_idleri(_tahta_id)
-        }
-        else if (_arama.Kriter == SABIT.URL_QUERY.KRITER.GIZLENENLER) {
-            defer_kriter = f_db_ihale_tahtanin_gizlenen_ihale_idleri(_tahta_id)
-        }
-
-        console.log("defer_kriter then e gidiyorum");
-
-        defer_kriter
-        //f_db_tahta_ihale_idler_aktif(_tahta_id)
-            .then(function () {
-                multi.exec(function (_err, _replies) {
-                    console.log("buraya kadar geldimmi")
-                    ssg = [{"_replies": _replies}];
-                    var sonuc = schema.f_create_default_object(SABIT.SCHEMA.LAZY_LOADING_RESPONSE);
-                    sonuc.ToplamKayitSayisi = _replies[0];
-
-                    if (_replies[1] && _replies[1].length > 0) {
-                        f_db_ihale_id(_replies[1], _tahta_id, _opts)
-                            .then(function (_ihaleler) {
-                                sonuc.Data = _ihaleler;
-                                defer.resolve(sonuc);
-                            });
-                    } else {
-                        defer.resolve(sonuc);
-                    }
-                });
-            });
-
         return defer.promise;
     };
 
     //region İHALE (ekle-sil-güncelle)
+
+    /**
+     * Ihale kaydedilir ve db'de oluşan şekliyle geri döner
+     * @param {IhaleES} es_ihale
+     * @param {IhaleDB} db_ihale
+     * @param {integer} kurum_id
+     * @param {integer} tahta_id
+     * @param {integer} _kul_id
+     * @returns {Promise}
+     */
     var f_db_ihale_ekle = function (es_ihale, db_ihale, kurum_id, tahta_id, _kul_id) {
 
         //SON EKLENEN İHALENİN İD SİNİ ÇEK VE EKLEME İŞLEMİNE BAŞLA
@@ -957,68 +1033,77 @@ function DB_Ihale() {
                 es_ihale.Id = _id;
 
                 return result.dbQ.Q.all([
-                    result.dbQ.hset(result.kp.ihale.tablo, _id, JSON.stringify(db_ihale)),
-                    result.dbQ.zadd(result.kp.ihale.zsetYapilmaTarihi, db_ihale.IhaleTarihi, db_ihale.Id)
+                        result.dbQ.hset(result.kp.ihale.tablo, _id, JSON.stringify(db_ihale)),
+                        result.dbQ.zadd(result.kp.ihale.zsetYapilmaTarihi, db_ihale.IhaleTarihi, db_ihale.Id)
 
-                ]).then(function () {
+                    ])
+                    .then(function () {
 
-                    if (tahta_id && tahta_id > 0) {
-                        //tahta ile ilişkilendir
-                        return result.dbQ.sadd(result.kp.tahta.ssetOzelIhaleleri(tahta_id, true), db_ihale.Id);
-                    } else {
-                        return result.dbQ.sadd(result.kp.ihale.ssetGenel, db_ihale.Id);
-                    }
+                        if (tahta_id && tahta_id > 0) {
+                            //tahta ile ilişkilendir
+                            return result.dbQ.sadd(result.kp.tahta.ssetOzelIhaleleri(tahta_id, true), db_ihale.Id);
+                        } else {
+                            return result.dbQ.sadd(result.kp.ihale.ssetGenel, db_ihale.Id);
+                        }
 
-                }).then(function () {
-                    //kurumun ihalelerine ekle
-                    //ihalenin kurumunu ata
-                    if (kurum_id > 0) {
-                        return result.dbQ.Q.all([
-                            result.dbQ.sadd(result.kp.kurum.ssetIhaleleri(kurum_id), db_ihale.Id),
-                            result.dbQ.hset(result.kp.ihale.hsetYapanKurumlari, db_ihale.Id, kurum_id)
-                        ]);
-                    }
-                    return db_ihale;
-                }).then(function () {
-                    //sisteme eklenme tarihini ekle
-                    if (db_ihale.SistemeEklenmeTarihi) {
-                        return result.dbQ.zadd(result.kp.ihale.zsetSistemeEklenmeTarihi, db_ihale.SistemeEklenmeTarihi, db_ihale.Id)
-                    }
-                    return db_ihale;
-                }).then(function () {
-                    //saglıkbank_id sini ekle
-                    if (db_ihale.SBIhale_Id && db_ihale.SBIhale_Id > 0) {
-                        return result.dbQ.zadd(result.kp.ihale.zsetSaglikbank, db_ihale.Id, db_ihale.SBIhale_Id)
-                    }
-                    return db_ihale;
-                }).then(function () {
-                    emitter.emit(SABIT.OLAY.IHALE_EKLENDI, es_ihale, kurum_id, tahta_id, _kul_id);
+                    })
+                    .then(function () {
+                        //kurumun ihalelerine ekle
+                        //ihalenin kurumunu ata
+                        if (kurum_id > 0) {
+                            return result.dbQ.Q.all([
+                                result.dbQ.sadd(result.kp.kurum.ssetIhaleleri(kurum_id), db_ihale.Id),
+                                result.dbQ.hset(result.kp.ihale.hsetYapanKurumlari, db_ihale.Id, kurum_id)
+                            ]);
+                        }
+                        return db_ihale;
+                    })
+                    .then(function () {
+                        //sisteme eklenme tarihini ekle
+                        if (db_ihale.SistemeEklenmeTarihi) {
+                            return result.dbQ.zadd(result.kp.ihale.zsetSistemeEklenmeTarihi, db_ihale.SistemeEklenmeTarihi, db_ihale.Id)
+                        }
+                        return db_ihale;
+                    })
+                    .then(function () {
+                        //saglıkbank_id sini ekle
+                        if (db_ihale.SBIhale_Id && db_ihale.SBIhale_Id > 0) {
+                            return result.dbQ.zadd(result.kp.ihale.zsetSaglikbank, db_ihale.Id, db_ihale.SBIhale_Id)
+                        }
+                        return db_ihale;
+                    })
+                    .then(function () {
+                        emitter.emit(schema.SABIT.OLAY.IHALE_EKLENDI, es_ihale, kurum_id, tahta_id, _kul_id);
 
-                    //ihale bilgisini dön
-                    /** @type {OptionsIhale} */
-                    var opts = {};
-                    opts.bArrKalemleri = true;
-                    opts.bYapanKurum = true;
-                    opts.bTakip = true;
-                    return f_db_ihale_id(_id, tahta_id, opts);
-                });
+                        //ihale bilgisini dön
+                        /** @type {OptionsIhale} */
+                        var opts = {};
+                        opts.bArrKalemleri = true;
+                        opts.bYapanKurum = true;
+                        opts.bTakip = true;
+                        return f_db_ihale_id(db_ihale.Id, tahta_id, opts);
+                    });
             })
             .fail(function (_err) {
-                throw new exception.istisna("İhale Eklenemedi!", "İhale eklenirken Hata oluştu: " + _err);
+                throw new exception.Istisna("İhale Eklenemedi!", "İhale eklenirken Hata oluştu: " + _err);
             });
     };
 
 
     /**
      * Genel tabloya ihale ekleme.
-     * @param _ihale
+     * @param _es_ihale
+     * @param _db_ihale
+     * @param _kullanici_id
      * @returns {*}
      */
     var f_db_ihale_ekle_genel = function (_es_ihale, _db_ihale, _kullanici_id) {
 
         /**
          * İhale bilgisini sisteme ekleyen fonk
-         * @param _ihale
+         * @param _es_ihale
+         * @param _db_ihale
+         * @param _kul_id
          * @returns {*}
          */
         var f_ihaleEkle = function (_es_ihale, _db_ihale, _kul_id) {
@@ -1031,15 +1116,34 @@ function DB_Ihale() {
                     _db_ihale.Id = _id;
 
                     return result.dbQ.Q.all([
-                        result.dbQ.hset(result.kp.ihale.tablo, _db_ihale.Id, JSON.stringify(_db_ihale)),
-                        result.dbQ.sadd(result.kp.ihale.ssetGenel, _db_ihale.Id),
-                        result.dbQ.sadd(result.kp.ihale.ssetIhaleUsulAdlari, _db_ihale.IhaleUsul),
-                        result.dbQ.sadd(result.kp.bolge.ssetAdlari, _db_ihale.BolgeAdi),
-                        result.dbQ.sadd(result.kp.sehir.ssetAdlari, _db_ihale.IlAdi),
-                        result.dbQ.sadd(result.kp.ihale.ssetGenel, _db_ihale.Id),
-                        result.dbQ.hset(result.kp.ihale.hsetIhale_ihaleDunyasiId, _es_ihale.IhaleProviders.IhaleDunyasi.IhaleDunyasiId, _db_ihale.Id),
-                        result.dbQ.zadd(result.kp.ihale.zsetYapilmaTarihi, _db_ihale.IhaleTarihi, _db_ihale.Id)
-                    ])
+                            result.dbQ.hset(result.kp.ihale.tablo, _db_ihale.Id, JSON.stringify(_db_ihale)),
+                            result.dbQ.sadd(result.kp.ihale.ssetGenel, _db_ihale.Id),
+                            result.dbQ.sadd(result.kp.ihale.ssetIhaleUsulAdlari, _db_ihale.IhaleUsul),
+                            result.dbQ.sadd(result.kp.ihale.ssetGenel, _db_ihale.Id),
+                            result.dbQ.hset(result.kp.ihale.hsetIhale_ihaleDunyasiId, _es_ihale.IhaleProviders.IhaleDunyasi.IhaleDunyasiId, _db_ihale.Id),
+                            result.dbQ.zadd(result.kp.ihale.zsetYapilmaTarihi, _db_ihale.IhaleTarihi, _db_ihale.Id)
+                        ])
+                        .then(function () {
+                            //şehir ekle
+                            if (_db_ihale.IlAdi) {
+                                var db_sehir = require("./db_sehir");
+                                return db_sehir.f_db_sehir_ekle(/** @type {Sehir} */{Id: 0, Adi: _db_ihale.IlAdi});
+                            } else {
+                                return _id;
+                            }
+                        })
+                        .then(function () {
+                            //bölge ekle
+                            if (_db_ihale.BolgeAdi) {
+                                var db_bolge = require("./db_bolge");
+                                return db_bolge.f_db_bolge_ekle(/** @type {Bolge} */{Id: 0, Adi: _db_ihale.BolgeAdi});
+                            } else {
+                                return _id;
+                            }
+                        })
+                        .then(function () {
+                            return _id;
+                        })
                 });
         };
 
@@ -1074,7 +1178,7 @@ function DB_Ihale() {
             var db_kalem = require('./db_kalem');
             return db_kalem.f_db_kalemleri_ekle(_db_ihale.Id, ihaleKalemleri, _kul_id)
                 .then(function () {
-                    emitter.emit(SABIT.OLAY.IHALE_EKLENDI, _es_ihale, _es_ihale.Kurum_Id, 0, _kullanici_id);
+                    emitter.emit(schema.SABIT.OLAY.IHALE_EKLENDI, _es_ihale, _es_ihale.Kurum_Id, 0, _kullanici_id);
                     return _es_ihale;
                 });
         };
@@ -1095,7 +1199,7 @@ function DB_Ihale() {
                 opts.bTakip = false;
                 return f_db_ihale_id(_db_ihale.Id, 0, opts)
                     .then(function (_dbIhale) {
-                        emitter.emit(SABIT.OLAY.IHALE_EKLENDI, _dbIhale, _dbIhale.Kurum_Id, 0, _kullanici_id);
+                        emitter.emit(schema.SABIT.OLAY.IHALE_EKLENDI, _dbIhale, _dbIhale.Kurum_Id, 0, _kullanici_id);
                         return _dbIhale;
                     });
             });
@@ -1174,7 +1278,7 @@ function DB_Ihale() {
                                                  */
 
                                                     //_ihale, _kurum_id, _tahta_id, _kul_id
-                                                emitter.emit(SABIT.OLAY.IHALE_EKLENDI, es_ihale, kurum_id, tahta_id, _kul_id);
+                                                emitter.emit(schema.SABIT.OLAY.IHALE_EKLENDI, es_ihale, kurum_id, tahta_id, _kul_id);
 
                                                 //ihalenin kurumunu ata
                                                 if (kurum_id > 0) {
@@ -1215,7 +1319,7 @@ function DB_Ihale() {
                                  * ama önce ihale id yi indexlenmişse listeden kaldırmalıyız.
                                  * (gelen konu içinde indexlenecek anahtar var mı bilmiyoruz, bu nedenle kaldırılmalı)
                                  */
-                                emitter.emit(SABIT.OLAY.IHALE_GUNCELLENDI,
+                                emitter.emit(schema.SABIT.OLAY.IHALE_GUNCELLENDI,
                                     {
                                         eski_ihale: _eski_ihale_bilgisi,
                                         yeni_ihale: es_ihale,
@@ -1252,14 +1356,13 @@ function DB_Ihale() {
                 if (_iGenel == 1) {
 
                     //bu ihale genelde silinemez!
-
-                    throw new exception.istisna("İhale Silinemedi!", "Silinmek istenen ihale GENEL ihaleler içerisinde kayıtlı olduğu için işlem tamamlanamadı!");
+                    throw new exception.Istisna("İhale Silinemedi!", "Silinmek istenen ihale GENEL ihaleler içerisinde kayıtlı olduğu için işlem tamamlanamadı!");
 
                 } else {
 
                     return f_db_ihale_id(_ihale_id, _tahta_id)
                         .then(function (_dbIhale) {
-                            emitter.emit(SABIT.OLAY.IHALE_SILINDI, _dbIhale, _tahta_id, _kul_id);
+                            emitter.emit(schema.SABIT.OLAY.IHALE_SILINDI, _dbIhale, _tahta_id, _kul_id);
 
                             return result.dbQ.Q.all([
                                 result.dbQ.srem(result.kp.tahta.ssetOzelIhaleleri(_tahta_id, true), _ihale_id),
@@ -1323,7 +1426,7 @@ function DB_Ihale() {
      *
      * satırın onay durumlarını düzenliyoruz
      * @param {integer} tahta_id
-     * @param {integer} ihale_id
+     * @param {integer} yeni_ihale_id
      * @param {integer} orj_ihale_id
      * @returns {*}
      */
@@ -1423,7 +1526,7 @@ function DB_Ihale() {
     var f_db_tahta_ihale_gizlenen_sil = function (_tahta_id, _ihale_id) {
         return result.dbQ.srem(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id), _ihale_id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.IHALE_GIZLENDI, _ihale_id, _tahta_id);
+                emitter.emit(schema.SABIT.OLAY.IHALE_GIZLENDI, _ihale_id, _tahta_id);
                 return _ihale_id;
             });
     };
@@ -1436,7 +1539,7 @@ function DB_Ihale() {
     var f_db_tahta_ihale_gizlenen_ekle = function (_tahta_id, _ihale_id) {
         return result.dbQ.sadd(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id), _ihale_id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.IHALE_GIZLENDI, _ihale_id, _tahta_id);
+                emitter.emit(schema.SABIT.OLAY.IHALE_GIZLENDI, _ihale_id, _tahta_id);
                 return _ihale_id;
             });
     };
@@ -1448,15 +1551,17 @@ function DB_Ihale() {
      */
     var f_db_ihale_tahtanin_gizlenen_ihale_idleri = function (_tahta_id) {
 
-        return result.dbQ.Q.all([
-            f_db_tahta_ihale_idler_aktif(_tahta_id),
-            result.dbQ.smembers(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id))
-        ]).then(function (_ress) {
+        return result.dbQ.smembers(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id))
+            .then(function (_gizlenen_ihale_idler) {
+                if (!_gizlenen_ihale_idler || _gizlenen_ihale_idler.length == 0) {
+                    return [];
+                }
 
-            var tahtanin_aktif_ihale_idleri = _ress[0],
-                tahtanin_gizlenen_ihale_idleri = _ress[1];
-            return _.intersection(tahtanin_aktif_ihale_idleri, tahtanin_gizlenen_ihale_idleri);
-        });
+                return f_db_tahta_ihale_idler_aktif(_tahta_id)
+                    .then(function (_aktif_ihale_idler) {
+                        return _.intersection(_aktif_ihale_idler, _gizlenen_ihale_idler)
+                    });
+            });
     };
 
     /**
@@ -1488,15 +1593,29 @@ function DB_Ihale() {
      */
     var f_db_ihale_tahtanin_gizlenen_kalem_idleri = function (_ihale_id, _tahta_id) {
 
-        return result.dbQ.Q.all([
-            f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id),
-            result.dbQ.smembers(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id))
-        ]).then(function (_ress) {
+        return result.dbQ.smembers(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id))
+            .then(function (_gizlenen_kalem_idler) {
+                console.log("_gizlenen_kalem_idler>" + _gizlenen_kalem_idler);
+                //herhangibir kayıt yoksa boş dizi dönüyoruz
+                if (!_gizlenen_kalem_idler || _gizlenen_kalem_idler.length == 0) {
+                    return [];
+                }
 
-            var tahtanin_aktif_kalem_idleri = _ress[0],
-                tahtanin_gizlenen_kalem_idleri = _ress[1];
-            return _.intersection(tahtanin_aktif_kalem_idleri, tahtanin_gizlenen_kalem_idleri);
-        });
+                //genel ihalenin kalemleri+tahtada eklenen özel ihale kalemleri-(tahtanın silinen kalemleri+tahtada ezilen kalemler)>işlem yapılacak kalemleri getirir
+                return result.dbQ.Q.all([
+                        result.dbQ.sunion(result.kp.ihale.ssetKalemleri(_ihale_id), result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, true)),
+                        result.dbQ.sunion(result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, false), result.kp.tahta.ssetEzilenKalemleri(_tahta_id))
+                    ])
+                    .then(function (_arrDbReplies) {
+                        var aktifler = _arrDbReplies[0],
+                            pasifler = _arrDbReplies[1];
+
+                        var aktif_kalem_idleri = aktifler.differenceXU(pasifler);
+
+                        console.log("_aktif_kalem_idleri>" + aktif_kalem_idleri);
+                        return _.intersection(aktif_kalem_idleri, _gizlenen_kalem_idler);
+                    });
+            });
     };
 
     /**
@@ -1582,15 +1701,19 @@ function DB_Ihale() {
      */
     var f_db_ihale_tahtanin_takipteki_ihale_idleri = function (_tahta_id) {
 
-        return result.dbQ.Q.all([
-            f_db_tahta_ihale_idler_aktif(_tahta_id),
-            result.dbQ.smembers(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id))
-        ]).then(function (_ress) {
+        return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id))
+            .then(function (_takipteki_ihale_idler) {
 
-            var tahtanin_aktif_ihale_idleri = _ress[0],
-                tahtanin_takipteki_ihale_idleri = _ress[1];
-            return _.intersection(tahtanin_aktif_ihale_idleri, tahtanin_takipteki_ihale_idleri);
-        });
+                //herhangibir kayıt yoksa boş dizi dönüyoruz
+                if (!_takipteki_ihale_idler || _takipteki_ihale_idler.length == 0) {
+                    return [];
+                }
+
+                return f_db_tahta_ihale_idler_aktif(_tahta_id)
+                    .then(function (_aktif_ihale_idler) {
+                        return _.intersection(_aktif_ihale_idler, _takipteki_ihale_idler);
+                    });
+            });
     };
 
     /**
@@ -1615,17 +1738,25 @@ function DB_Ihale() {
     };
 
 
+    /**
+     * İhalenin takipteki kalem idlerini getirir
+     * @param _ihale_id
+     * @param _tahta_id
+     * @returns {*}
+     */
     var f_db_ihale_tahtanin_takipteki_kalem_idleri = function (_ihale_id, _tahta_id) {
 
-        return result.dbQ.Q.all([
-            f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id),
-            result.dbQ.smembers(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id))
-        ]).then(function (_ress) {
-
-            var tahtanin_aktif_kalem_idleri = _ress[0],
-                tahtanin_takipteki_kalem_idleri = _ress[1];
-            return _.intersection(tahtanin_aktif_kalem_idleri, tahtanin_takipteki_kalem_idleri);
-        });
+        return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id))
+            .then(function (_takipteki_kalem_idler) {
+                //takip edilen kalem yoksa boş dizi dön
+                if (!_takipteki_kalem_idler || _takipteki_kalem_idler.length == 0) {
+                    return [];
+                }
+                return f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id)
+                    .then(function (_aktif_kalem_idler) {
+                        return _.intersection(_aktif_kalem_idler, _takipteki_kalem_idler);
+                    });
+            });
     };
 
     var f_db_ihale_tahtanin_takipteki_kalemleri = function (_ihale_id, _tahta_id) {
@@ -1701,9 +1832,9 @@ function DB_Ihale() {
          */
         OptionsIhale: function (opts) {
             /** @class OptionsIhale */
-            return extend({
+            return _.extend({
                 /** @type {OptionsKalem} */
-                optKalem: extend({
+                optKalem: _.extend({
                     bArrTeklifleri: false,
                     bTakiptemi: true,
                     bOnayDurumu: true

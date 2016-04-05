@@ -1,11 +1,18 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    extensions = require('kuark-extensions'),
+    schema = require("kuark-schema"),
+    emitter = new (require('events').EventEmitter)();
+
 /**
  *
  * @returns {DBDikkat}
  * @constructor
  */
 function DB_Dikkat() {
-    var result = {},
-        db_uyari = require('./db_uyari');
+    /** @type {DBDikkat} */
+    var result = {};
 
     var f_db_dikkat_toplam = function (_kul_id, _yeni, _silinen, _okunan) {
         if (_yeni == true && _silinen == true && _okunan == true) {
@@ -33,6 +40,7 @@ function DB_Dikkat() {
 
     var f_db_dikkat_tumu = function (_kul_id, _yeni, _silinen, _okunan, _iSayfa, _iAdet) {
         l.info("f_db_dikkat_tumu")
+        extensions.ssg = [{"f_db_dikkat_tumu": arguments}];
 
         if (_yeni == true && _silinen == true && _okunan == true) {
 
@@ -43,7 +51,7 @@ function DB_Dikkat() {
             var anahtar = result.kp.temp.zsetKullaniciDikkatTumu(_kul_id);
             result.dbQ.exists(anahtar)
                 .then(function (_iExists) {
-                    if (_iExists == true) {
+                    if (_iExists == 1) {
                         return 1;
 
                     } else {
@@ -68,7 +76,8 @@ function DB_Dikkat() {
         } else {
             return result.dbQ.zrevrangebyscore(result.kp.kullanici.zsetDikkat(_kul_id, _yeni, _silinen, _okunan), '+inf', '-inf', "LIMIT", _iSayfa, _iAdet)
                 .then(function (_idler) {
-                    if (_idler && _idler.length > 0) {
+                    console.log("_idler>" + _idler);
+                    if (Array.isArray(_idler) && _idler.length > 0) {
                         return result.dbQ.hmget_json_parse(result.kp.uyari.hsetUyariSonuclari, _idler);
                     } else {
                         return [];
@@ -82,7 +91,7 @@ function DB_Dikkat() {
 
         return result.dbQ.zadd(result.kp.kullanici.zsetDikkat(kul_id, true, false, false), new Date().getTime(), id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.DIKKAT_EKLENDI, kul_id);
+                emitter.emit(schema.SABIT.OLAY.DIKKAT_EKLENDI, kul_id);
                 return id;
             });
     };
@@ -103,7 +112,7 @@ function DB_Dikkat() {
                 result.dbQ.zrem(result.kp.kullanici.zsetDikkat(kul_id, false, false, true), id),
                 result.dbQ.zadd(result.kp.kullanici.zsetDikkat(kul_id, false, true, false), new Date().getTime(), id)])
             .then(function () {
-                emitter.emit(SABIT.OLAY.DIKKAT_SILINDI, kul_id);
+                emitter.emit(schema.SABIT.OLAY.DIKKAT_SILINDI, kul_id);
                 return id;
             });
     };

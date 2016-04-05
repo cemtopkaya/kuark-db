@@ -1,3 +1,10 @@
+'use strict';
+
+var l = require('../lib/winstonConfig'),
+    extension = require('kuark-extensions'),
+    redis = require('redis'),
+    q = require('q');
+
 /**
  * @param {Object} result
  * @returns {KeyPrefix}
@@ -512,10 +519,6 @@ var f_keyPrefixes = function (result) {
                 return TEMP + ":" + TAHTA + ":" + _tahta_id + ":" + ANAHTAR + ":" + IHALE;
             },
 
-            //ihale kalemleri
-            zsetTahtaIhaleKalemleri: function (_tahta_id, _ihale_id) {
-                return TEMP + ":" + TAHTA + ":" + _tahta_id + ":" + IHALE + ":" + _ihale_id + ":" + KALEM;
-            },
 
             ssetTahtaIhaleTumu: function (_tahta_id) {
                 return TEMP + ":" + TAHTA + ":" + _tahta_id + ":" + IHALE + ":" + TUMU;
@@ -647,9 +650,7 @@ var f_keyPrefixes = function (result) {
  */
 function REDIS(_dbNo) {
 
-    var redis = require('redis'),
-        q = require('q'),
-        dbNo = _dbNo || 0,
+    var dbNo = _dbNo || 0,
         /**
          *
          * @type {Redis}
@@ -739,8 +740,6 @@ function REDIS(_dbNo) {
             hkeys: q.nbind(c.hkeys, c),
             hmget: q.nbind(c.hmget, c),
             hmget_array: function () {
-                console.log("-----------------------   ----- hmget_array");
-                ssg = [{"arguments": arguments}];
                 return q.nfapply(c.hmget.bind(c), arguments);
             },
             hmget_json_parse: function () {

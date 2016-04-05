@@ -1,20 +1,13 @@
-var uuid = require('node-uuid'),
-    db = require("../../node/server/db")(),
-    _ = require('underscore'),
-    global = require('../../node/globals');
+var db = require("../src/index")(),
+    should = require('chai').should;
 
-describe("Uyarı servis işlemleri", function () {
-
-    before(function (done) {
-        done();
-    });
+describe("Haber işlemleri", function () {
 
     it("Tahta haberleri", function (done) {
 
-        return db.haber.f_db_haber_tumu(25, 0, true,false,false)
+         db.haber.f_db_haber_tumu(25, 0, true,false,false)
             .then(function (_res) {
                 console.log("TAHTAYA AİT HABERLER");
-                console.log(_res);
                 done();
             })
             .fail(function (_err) {
@@ -26,10 +19,9 @@ describe("Uyarı servis işlemleri", function () {
 
     it("Kullanıcı haberleri", function (done) {
         this.timeout(5000);
-        return db.haber.f_db_haber_tumu(0,1,true,false,false)
+         db.haber.f_db_haber_tumu(0,1,true,false,false)
             .then(function (_res) {
                 console.log("KULLANICI HABERLERİ");
-                console.log(_res);
                 done();
             })
             .fail(function (_err) {

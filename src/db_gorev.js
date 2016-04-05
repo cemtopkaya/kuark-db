@@ -1,3 +1,7 @@
+'use strict';
+
+var l = require('../lib/winstonConfig');
+
 /**
  *
  * @returns {DBGorev}
@@ -8,7 +12,9 @@ function DB_Gorev() {
      *
      * @type {DBGorev}
      */
-    var result = {};
+    var result = {},
+        emitter = new (require('events').EventEmitter)(),
+        schema = require("kuark-schema");
 
     var f_db_gorev_toplam = function (kul_id, _tumu, _biten) {
         return result.dbQ.zcard(result.kp.kullanici.zsetGorev(kul_id, _tumu, _biten));
@@ -76,7 +82,7 @@ function DB_Gorev() {
 
         return result.dbQ.zadd(result.kp.kullanici.zsetGorev(kul_id, true, false), new Date().getTime(), id)
             .then(function () {
-                emitter.emit(SABIT.OLAY.GOREV_EKLENDI, kul_id);
+                emitter.emit(schema.SABIT.OLAY.GOREV_EKLENDI, kul_id);
                 return id;
             });
     };

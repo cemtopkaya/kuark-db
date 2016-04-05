@@ -4,13 +4,9 @@
  * @constructor
  */
 function DB_Uyari() {
-    // db işlemlerinin Promise ile yapılabilmesi için.
-    /**
-     *
-     * @type {DBUyari}
-     */
-    var result = {},      
-        uuid = require('node-uuid');
+
+    /** @type {DBUyari} */
+    var result = {};
 
 
     /**
@@ -21,7 +17,7 @@ function DB_Uyari() {
     var f_db_uyarilar_tahta_tumu = function (_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetUyarilari(_tahta_id, true))
             .then(function (_uyari_idleri) {
-                return f_db_uyari_idler(_tahta_id, _uyari_idleri);
+                return f_db_uyari_id(_uyari_idleri, _tahta_id);
             });
     };
 
@@ -37,52 +33,73 @@ function DB_Uyari() {
                 result.dbQ.smembers(result.kp.uyari.ssetPasif)
             ])
             .then(function (_ress) {
-                var uyari_idler = _ress[0].differenceXU(_ress[1]);
-                return result.dbQ.hmget_json_parse(result.kp.uyari.tablo, uyari_idler);
+
+                if (Array.isArray(_ress[0])) {
+                    if (_ress[0].length == 0) {
+                        return [];
+                    }
+
+                    var pasif_idler = _ress[1];
+                    var uyari_idler = _ress[0].differenceXU(pasif_idler);
+                    return result.dbQ.hmget_json_parse(result.kp.uyari.tablo, uyari_idler);
+                }
+
+                return [];
+
             });
     };
 
-    /**
-     * Uyarı bilgisini bul
-     * @param {integer} _tahta_id
-     * @param {integer[]} _uyari_idler
-     * @returns {*}
-     */
-    var f_db_uyari_idler = function (_tahta_id, _uyari_idler) {
-        if (Array.isArray(_uyari_idler)) {
-            var arrPromise = _uyari_idler.map(function (_id) {
-                return f_db_uyari_id(_tahta_id, _id);
-            });
-            return result.dbQ.Q.all(arrPromise);
-        } else {
-            return [];
-        }
-    };
 
     /**
-     * Uyarı bilgisini bul
+     * Uyarı/ların bilgisini bul
+     * @param {integer|integer[]|string|string[]} _uyari_id
      * @param {integer} _tahta_id
-     * @param {integer} _uyari_id
+     * @param {OptionsUyari=} _opt
      * @returns {*}
      */
-    var f_db_uyari_id = function (_tahta_id, _uyari_id) {
-        var defer = result.dbQ.Q.defer();
-        result.dbQ.hget_json_parse(result.kp.uyari.tablo, _uyari_id)
-            .then(function (_uyari) {
-                var kullanici = require('./db_kullanici'),
-                    rol = require('./db_rol');
-                
-                result.dbQ.Q.all([
-                    kullanici.f_db_uye_idler(_uyari.Uye_Idler, _tahta_id),
-                    rol.f_db_rol_idler(_uyari.Rol_Idler)
-                ]).then(function (_ress) {
-                    _uyari.Uyeler = _ress[0];
-                    _uyari.Roller = _ress[1];
+    var f_db_uyari_id = function (_uyari_id, _tahta_id, _opt) {
 
-                    defer.resolve(schema.f_suz_klonla(SABIT.SCHEMA.UYARI, _uyari));
-                });
+        /** @type {OptionsUyari} */
+        var opts = result.OptionsUyari(_opt);
+
+        return (Array.isArray(_uyari_id)
+            ? result.dbQ.hmget_json_parse(result.kp.uyari.tablo, _uyari_id)
+            : result.dbQ.hget_json_parse(result.kp.uyari.tablo, _uyari_id))
+            .then(function (_dbUyari) {
+                if (!_dbUyari) {
+                    return null;
+                } else {
+                    var kullanici = require('./db_kullanici'),
+                        rol = require('./db_rol');
+
+                    function f_uyari_bilgisi(_uyari) {
+                        if (!_uyari) {//uyarı yoksa null dön
+                            return null;
+                        }
+                        var olusan_uyari = schema.f_create_default_object(schema.SCHEMA.UYARI);
+                        _.extend(olusan_uyari, _uyari);
+
+                        return result.dbQ.Q.all([
+                                opts.bArrUyeleri ? kullanici.f_db_uye_id(_uyari.Uye_Idler, _tahta_id) : [],
+                                opts.bArrRolleri ? rol.f_db_rol_id(_uyari.Rol_Idler) : []
+                            ])
+                            .then(function (_ress) {
+                                olusan_uyari.Uyeler = _ress[0];
+                                olusan_uyari.Roller = _ress[1];
+                                return olusan_uyari;
+                            });
+                    }
+
+                    return (Array.isArray(_dbUyari)
+                        ? _dbUyari.map(f_uyari_bilgisi).allX()
+                        : f_uyari_bilgisi(_dbUyari))
+                        .then(function (_olusan_uyari) {
+                            return _olusan_uyari;
+                        });
+                }
+
+
             });
-        return defer.promise;
     };
 
     /**
@@ -104,29 +121,31 @@ function DB_Uyari() {
                 _uyari.Id = _id;
 
                 return result.dbQ.Q.all([
-                    result.dbQ.hset(result.kp.uyari.tablo, _id, JSON.stringify(_uyari)),
-                    result.dbQ.sadd(result.kp.tahta.ssetUyarilari(_tahta_id, true), _id)
-                ]).then(function () {
-                    //uyarının durumuna göre (true/false) sete ekleyeceğiz
-                    //durumu false olanları pasifler setine ekleyeceğiz
-                    if (_uyari.Durumu == false) {
-                        return result.dbQ.sadd(result.kp.uyari.ssetPasif, _uyari.Id);
-                    } else {
-                        //durumu true ise tetiklenecekler setine de ekle
-                        //pasifteki uyarılardan sil
-                        return result.dbQ.Q.all([
-                            result.dbQ.srem(result.kp.uyari.ssetPasif, _uyari.Id),
-                            result.dbQ.sadd(result.kp.uyari.ssetTetiklenecekOlay, _uyari.Olay)
-                        ]);
-                    }
-                }).then(function () {
-                    return f_db_uyari_id(_tahta_id, _uyari.Id);
-                });
+                        result.dbQ.hset(result.kp.uyari.tablo, _id, JSON.stringify(_uyari)),
+                        result.dbQ.sadd(result.kp.tahta.ssetUyarilari(_tahta_id, true), _id)
+                    ])
+                    .then(function () {
+                        //uyarının durumuna göre (true/false) sete ekleyeceğiz
+                        //durumu false olanları pasifler setine ekleyeceğiz
+                        if (_uyari.Durumu == false) {
+                            return result.dbQ.sadd(result.kp.uyari.ssetPasif, _uyari.Id);
+                        } else {
+                            //durumu true ise tetiklenecekler setine de ekle
+                            //pasifteki uyarılardan sil
+                            return result.dbQ.Q.all([
+                                result.dbQ.srem(result.kp.uyari.ssetPasif, _uyari.Id),
+                                result.dbQ.sadd(result.kp.uyari.ssetTetiklenecekOlay, _uyari.Olay)
+                            ]);
+                        }
+                    })
+                    .then(function () {
+                        return f_db_uyari_id(_uyari.Id, _tahta_id);
+                    });
             });
     };
 
     var f_db_uyari_kopyala = function (_tahta_id, _uyari_id) {
-        return f_db_uyari_id(_tahta_id, _uyari_id)
+        return f_db_uyari_id(_uyari_id, _tahta_id)
             .then(function (_dbUyari) {
                 return f_db_uyari_ekle(_tahta_id, _dbUyari);
             });
@@ -151,7 +170,7 @@ function DB_Uyari() {
                 }
             })
             .then(function () {
-                return f_db_uyari_id(_tahta_id, _uyari.Id)
+                return f_db_uyari_id(_uyari.Id, _tahta_id)
             });
     };
 
@@ -180,14 +199,28 @@ function DB_Uyari() {
             "sms": "sms",
             "todo": "todo"
         },
-        f_db_uyari_idler: f_db_uyari_idler,
         f_db_uyari_id: f_db_uyari_id,
         f_db_uyari_sil: f_db_uyari_sil,
         f_db_uyari_guncelle: f_db_uyari_guncelle,
         f_db_uyari_ekle: f_db_uyari_ekle,
         f_db_uyarilar_tumu: f_db_uyarilar_tumu,
         f_db_uyarilar_tahta_tumu: f_db_uyarilar_tahta_tumu,
-        f_db_uyari_kopyala: f_db_uyari_kopyala
+        f_db_uyari_kopyala: f_db_uyari_kopyala,
+        /**
+         *
+         * @param opts - Ezilecek değerleri taşıyan nesne
+         * @returns {OptionsUyari}
+         */
+        OptionsUyari: function (opts) {
+            /** @class OptionsUyari*/
+            var optsDefault = {
+                bArrUyeleri: true,
+                bArrRolleri: true
+            };
+
+            /** @type {OptionsUyari}*/
+            return _.extend(optsDefault, opts || {})
+        }
     };
 
     return result;

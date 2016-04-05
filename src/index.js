@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  *
  * @returns {DBModel}
@@ -5,11 +7,7 @@
  */
 function DB() {
 
-    var cem = "1",
-        /**
-         *
-         * @type {Redis}
-         */
+    var /** @type {Redis} */
         Redis = require('./Redis'),
         /**
          *
@@ -120,14 +118,16 @@ function DB() {
          *
          * @type {DBOlay}
          */
-        DB_Olay = require('./db_olay');
+        DB_Olay = require('./db_olay'),
+        /** @type {DBModel} */
+        result = {};
 
     DB_Olay.f_init_db_olay();
 
     /**
      * @class DBModel
      */
-    var result = {
+    result = {
         redis: Redis,
         urun: DB_Urun,
         anahtar: DB_Anahtar,
@@ -152,8 +152,9 @@ function DB() {
         uyari_servisi: DB_UyariServisi,
         olay: DB_Olay
     };
+
     return result;
-};
+}
 
 
 module.exports = DB;

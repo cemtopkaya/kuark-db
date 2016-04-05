@@ -1,21 +1,25 @@
+'use strict';
+
+var l = require('../lib/winstonConfig');
+
 /**
  *
  * @returns {DBLog}
  * @constructor
  */
 function DB_Log() {
-    var util = require('util');
+   
     /**
      *
      * @type {DBLog}
      */
-    var res = {};
+    var result = {};
 
 
     /**
      * @class DBLog
      */
-    res = {
+    result = {
 
         islem: {
             "EKLE": "ekle",
@@ -43,11 +47,11 @@ function DB_Log() {
             };
             _anahtar = "log:" + _anahtar + (_nesne.Id ? ":" + _nesne.Id : "");
 
-            return res.dbQ.sadd(_anahtar, JSON.stringify(obj));
+            return result.dbQ.sadd(_anahtar, JSON.stringify(obj));
         }
     };
 
-    return res;
+    return result;
 }
 
 
