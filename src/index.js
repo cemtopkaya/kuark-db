@@ -119,6 +119,7 @@ function DB() {
          * @type {DBOlay}
          */
         DB_Olay = require('./db_olay'),
+        Elastic = require('../lib/elastic'),
         /** @type {DBModel} */
         result = {};
 
@@ -129,6 +130,7 @@ function DB() {
      */
     result = {
         redis: Redis,
+        elastic: Elastic,
         urun: DB_Urun,
         anahtar: DB_Anahtar,
         kurum: DB_Kurum,
