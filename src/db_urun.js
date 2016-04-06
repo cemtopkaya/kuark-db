@@ -38,7 +38,7 @@ function DB_Urun() {
      * @returns {*}
      */
     var f_db_urunun_kazandigi_teklif_fiyatlari = function (_tahta_id, _urun_id, _parabirim_id) {
-        l.info("f_db_urunun_kazandigi_teklif_fiyatlari");
+        //l.info("f_db_urunun_kazandigi_teklif_fiyatlari");
         //ürünün kazandığı teklifleri bul
         //bu tekliflerin fiyatlarını getir
         return f_db_urunun_teklif_fiyatlari_onay_durumuna_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _parabirim_id);
@@ -53,7 +53,7 @@ function DB_Urun() {
      * @returns {Promise}
      */
     var f_db_urunun_teklif_fiyatlari_onay_durumuna_gore = function (_tahta_id, _urun_id, _onay_durum_id, _parabirim_id) {
-        l.info("f_db_urunun_teklif_fiyatlari_onay_durumuna_gore");
+        //l.info("f_db_urunun_teklif_fiyatlari_onay_durumuna_gore");
 
         return f_db_urun_teklif_temp(_tahta_id, _urun_id, _parabirim_id, _onay_durum_id)
             .then(function () {
@@ -330,10 +330,6 @@ function DB_Urun() {
                 } else {
                     return result.dbQ.zrangebyscore(result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _para_id), _tarih1, _tarih2);
                 }
-            })
-            .then(function (_teklif_idler) {
-                l.info("_teklif_idler>" + JSON.stringify(_teklif_idler));
-                return _teklif_idler;
             });
     };
 
@@ -442,7 +438,7 @@ function DB_Urun() {
      * @returns {LazyLoadingResponse|Promise}
      */
     var f_db_urun_tumu = function (_tahta_id, _sayfalama) {
-        l.info("f_db_urun_tumu");
+        //l.info("f_db_urun_tumu");
 
         return f_db_urun_aktif_urun_idleri(_tahta_id, _sayfalama)
             .then(
@@ -604,11 +600,11 @@ function DB_Urun() {
      * @returns {*}
      */
     var f_db_urun_ekle = function (_db_urun, _uretici_id, _tahta_id, _kul_id) {
-        l.info("f_db_urun_ekle");
+        //l.info("f_db_urun_ekle");
 
         var f_urun_ekle = function (_db_urun, _uretici_id, _tahta_id, _kul_id) {
             //SON EKLENEN ürünün İD SİNİ ÇEK VE EKLEME İŞLEMİNE BAŞLA
-            l.info("f_urun_ekle");
+            //l.info("f_urun_ekle");
             return result.dbQ.incr(result.kp.urun.idx)
                 .then(function (_id) {
                     _db_urun.Id = _id;
@@ -687,7 +683,7 @@ function DB_Urun() {
                 }
             })
             .then(function () {
-                l.info("ürünü değiştir ve dön");
+                //l.info("ürünü değiştir ve dön");
                 return result.dbQ.hset(result.kp.urun.tablo, _db_urun.Id, JSON.stringify(_db_urun))
                     .then(function () {
                         return f_db_urun_id(_db_urun.Id, _tahta_id);
@@ -703,7 +699,7 @@ function DB_Urun() {
      * @returns {*}
      */
     var f_db_urun_sil = function (_tahta_id, _urun_id, _kul_id) {
-        l.info("silinecek ürün_id:" + _urun_id);
+        //l.info("silinecek ürün_id:" + _urun_id);
 
         // Validasyon yapalım
         if (!_urun_id) {
@@ -822,16 +818,13 @@ function DB_Urun() {
 
     var f_db_urun_anahtar_sil = function (_tahta_id, _urun_id, _anahtar_id) {
         //return result.dbQ.zrem(result.kp.urun.zsetAnahtarKelimeleri(tahta_id, urun_id), _anahtarKelime);
-        l.info("f_db_urun_anahtar_sil");
+        //l.info("f_db_urun_anahtar_sil");
 
         return result.f_db_anahtar_val(_anahtar_id)
             .then(function (_dbAnahtar) {
-                if (_dbAnahtar != null) {
-                    return result.dbQ.zrem(result.kp.urun.zsetAnahtarKelimeleri(_tahta_id, _urun_id), _dbAnahtar.Anahtar);
-                }
-                else {
-                    throw new exception.Istisna("Anahtar sil", "Anahtar bilgisi BULUNAMADI! Bu nedenle silme tamamlanamadı..");
-                }
+                if (_dbAnahtar == null) throw new exception.Istisna("Anahtar sil", "Anahtar bilgisi BULUNAMADI! Bu nedenle silme tamamlanamadı..");
+
+                return result.dbQ.zrem(result.kp.urun.zsetAnahtarKelimeleri(_tahta_id, _urun_id), _dbAnahtar.Anahtar);
             });
 
     };

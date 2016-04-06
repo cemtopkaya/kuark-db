@@ -26,7 +26,6 @@ function DB_Olay() {
         return result.dbQ.exists(result.kp.olay.tablo)
             .then(function (_intVarYok) {
                 if (_intVarYok == 0) {
-                    l.info("olay yokmuş ekleyeceğiz");
                     /*for (o in OLAY_ADI) {
                      l.info(o + " - " + result.OLAY_ADI[o]);
                      result.dbQ.hset(result.kp.olay.tablo, o, result.OLAY_ADI[o]);

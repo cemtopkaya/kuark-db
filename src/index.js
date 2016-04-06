@@ -158,5 +158,4 @@ function DB() {
     return result;
 }
 
-
 module.exports = DB;

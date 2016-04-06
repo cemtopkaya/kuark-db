@@ -595,14 +595,14 @@ function DB_Tahta() {
      */
     var f_db_tahta_uyeleri = function (_tahta_id, _opts) {
         var db_kullanici = require('./db_kullanici');
-        console.log("f_db_tahta_uyeleri: _tahta_id> " + _tahta_id);
+
         return f_db_aktif_tahta_uye_idleri(_tahta_id)
             .then(function (_aktifIdleri) {
                 return db_kullanici.f_db_uye_id(_aktifIdleri, _tahta_id, _opts);
             })
             .fail(function (_err) {
                 console.log("HATAAA: " + _err);
-                ssr = [{"f_db_tahta_uyeleri fail": _err}];
+                extensions.ssr = [{"f_db_tahta_uyeleri fail": _err}];
                 throw _err;
             });
     };
@@ -1048,7 +1048,6 @@ function DB_Tahta() {
         //tahtanın anahtar kelimelerini döner
         return result.dbQ.zrangebyscore([result.kp.tahta.zsetAnahtarKelimeleri(_tahta_id), '-inf', '+inf'])
             .then(function (_arr_anahtar_kelimeler) {
-                console.log("_arr_anahtar_kelimeler>" + _arr_anahtar_kelimeler);
                 if (_arr_anahtar_kelimeler && _arr_anahtar_kelimeler.length > 0) {
 
                     //önce anahtar kelimelere ait id leri tutuyoruz sonra da bilgilerini dönüyoruz
