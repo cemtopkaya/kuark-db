@@ -37,7 +37,7 @@ describe("DB Kalem İşlemleri", function () {
     });
 
 
-    it("kalem id ler bul", function (done) {
+    it.only("kalem id ler bul", function (done) {
 
         /** @type {OptionsKalem} */
         var opt = {};
@@ -45,7 +45,7 @@ describe("DB Kalem İşlemleri", function () {
         opt.bOnayDurumu = true;
         opt.bTakiptemi = true;
 
-        db.kalem.f_db_kalem_id(["1", "2"], 1, opt)
+        db.kalem.f_db_kalem_id([1,2], 1, opt)
             .then(function (_res) {
                 console.log("_Res");
                 console.log(_res);

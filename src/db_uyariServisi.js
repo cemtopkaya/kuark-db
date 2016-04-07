@@ -539,7 +539,7 @@ function DB_UyariServisi() {
         var defer = result.dbQ.Q.defer();
         l.info("f_mail_secildi");
 
-        var EMail = require('../lib/email'),
+        var EMail = extensions.EMail,
             mail = new EMail("", "", "", true);
 
         f_mail_uyari_sonucu_olustur(_uyari.Tahta_Id, _uyari.RENDER.Tipi, _uyari.RENDER.Uyeler, _uyari.RENDER.Sonuc, _uyari)
