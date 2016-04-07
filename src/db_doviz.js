@@ -1,14 +1,8 @@
 'use strict';
 
-/**
- *
- * @type {DBDoviz}
- */
-var obj = DB_Doviz();
-
-obj.__proto__ = require('./db_log');
-module.exports = obj;
-
+var sql = require('mssql'),
+    schema = require('kuark-schema'),
+    extensions = require('kuark-extensions');
 
 /**
  *
@@ -16,11 +10,9 @@ module.exports = obj;
  * @constructor
  */
 function DB_Doviz() {
-    var sql = require('mssql'),
-        /** @type {DBDoviz} */
-        result = {},
-        schema = require('kuark-schema'),
-        extensions= require('kuark-extensions');
+
+    /** @type {DBDoviz} */
+    var result = {};
 
     function f_db_doviz_kurlari_cek(_adet, _iKurDeger_id) {
 
@@ -157,3 +149,12 @@ function DB_Doviz() {
 
     return result;
 }
+
+/**
+ *
+ * @type {DBDoviz}
+ */
+var obj = DB_Doviz();
+
+obj.__proto__ = require('./db_log');
+module.exports = obj;

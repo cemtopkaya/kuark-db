@@ -1,6 +1,6 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
+var l =require('kuark-extensions').winstonConfig,
     schema = require("kuark-schema");
 
 /**

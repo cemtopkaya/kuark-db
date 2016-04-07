@@ -1,7 +1,7 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    extension = require('kuark-extensions'),
+var extension = require('kuark-extensions'),
+    l = extension.winstonConfig,
     redis = require('redis'),
     q = require('q');
 

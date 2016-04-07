@@ -5,7 +5,7 @@ var db = require("../src/index")(),
     schema = require("kuark-schema"),
     extension = require('kuark-extensions'),
     uuid = require('node-uuid'),
-    l = require('../lib/winstonConfig');
+    l = extension.winstonConfig;
 
 describe("DB Tahta İşlemleri", function () {
 
@@ -26,16 +26,22 @@ describe("DB Tahta İşlemleri", function () {
         tahta.Genel.Id = 1;
         tahta.Genel.Adi = "Kullanıcı Tahtası " + (new Date()).getTime();
         tahta.Genel.Aciklama = "Tahta bilgileri";
+        tahta.Uyeler = [{Id: 1}];
+        tahta.Roller = [{Id: 0}];
         done();
     });
 
 
     describe("Temel Tahta işlemleri", function () {
         it("Tahta ekleniyor", function (done) {
-            db.tahta.f_db_tahta_ekle(tahta, kullanici_id)
+            console.log("tahta>" + JSON.stringify(tahta));
+
+            db.tahta.f_db_tahta_ekle(tahta.Genel,1)
                 .then(
                     /** @param {Tahta} _dbTahta */
                     function (_dbTahta) {
+                        console.log("_dbTahta>"+ _dbTahta);
+
                         assert(_dbTahta.Genel.Id > 0, 'Tahta sisteme eklenemedi!');
                         done();
                     })

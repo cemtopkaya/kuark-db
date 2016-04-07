@@ -1,10 +1,10 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    uuid = require('node-uuid'),
+var uuid = require('node-uuid'),
     schema = require('kuark-schema'),
     _ = require('lodash'),
-    extensions = require('kuark-extensions');
+    extensions = require('kuark-extensions'),
+    l = extensions.winstonConfig;
 
 /**
  *

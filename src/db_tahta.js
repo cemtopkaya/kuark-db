@@ -1,10 +1,10 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    schema = require('kuark-schema'),
+var schema = require('kuark-schema'),
     exception = require('kuark-istisna'),
     emitter = new (require('events').EventEmitter)(),
     extensions = require('kuark-extensions'),
+    l = extensions.winstonConfig,
     _ = require('lodash');
 
 
@@ -27,13 +27,13 @@ function DB_Tahta() {
         /** @type {DBTahta} */
         result = {};
 
-    //region TAHTA TAKİPTEKİLER
+    // region TAHTA TAKİPTEKİLER
     /**
      * Tahtanın takip ettiği ihale listesini ihale bilgileriyle getirir
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_takip_tumu = function (_tahta_id) {
+    function f_db_tahta_ihale_takip_tumu(_tahta_id) {
         return f_db_tahta_ihale_takip_idler(_tahta_id)
             .then(function (_ihale_idler) {
                 if (_ihale_idler && _ihale_idler.length > 0) {
@@ -50,18 +50,18 @@ function DB_Tahta() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      * Tahtanın takip edilen ihale id lerini getirir
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_takip_idler = function (_tahta_id) {
+    function f_db_tahta_ihale_takip_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id));
-    };
+    }
 
-    var f_db_tahta_ihale_takip_toplami = function (_tahta_id) {
+    function f_db_tahta_ihale_takip_toplami(_tahta_id) {
         var db_ihale = require("./db_ihale");
         return result.dbQ.Q.all([
             db_ihale.f_db_tahta_ihale_idler_aktif(_tahta_id),
@@ -78,14 +78,14 @@ function DB_Tahta() {
             sonuc.Gecersiz = toplam - gecerli;
             return sonuc;
         });
-    };
+    }
 
     /**
      * Tahtanın indexli ihale id lerini döner
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_indeksli_idler = function (_tahta_id) {
+    function f_db_tahta_ihale_indeksli_idler(_tahta_id) {
         return result.dbQ.exists(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))
             .then(function (_exists) {
                 if (_exists == 1) {
@@ -98,7 +98,7 @@ function DB_Tahta() {
                         });
                 }
             });
-    };
+    }
 
 
     /**
@@ -106,7 +106,7 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_indekslenen_ve_takip_edilen_ihale_idleri = function (_tahta_id) {
+    function f_indekslenen_ve_takip_edilen_ihale_idleri(_tahta_id) {
         return result.dbQ.Q.all([
             f_db_tahta_ihale_indeksli_idler(_tahta_id),
             f_db_tahta_ihale_takip_idler(_tahta_id)
@@ -118,14 +118,14 @@ function DB_Tahta() {
 
             return _.union(indexliler, takiptekiler);
         })
-    };
+    }
 
     /**
      * Tahtanın anahtar kelimelerine uygun olan ve takip edilen kalem id lerinin birleşimini döner
      * @param _tahta_id
      * @returns {Array}
      */
-    var f_indekslenen_ve_takip_edilen_kalem_idler = function (_tahta_id) {
+    function f_indekslenen_ve_takip_edilen_kalem_idler(_tahta_id) {
 
         var db_kalem = require("./db_kalem");
         return result.dbQ.Q.all([
@@ -139,7 +139,7 @@ function DB_Tahta() {
 
                 return indeksliler.unionXU(takipteki_kalemler);
             });
-    };
+    }
 
 
     /**
@@ -147,8 +147,8 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_rapor_bilgileri = function (_tahta_id, _arama) {
-        console.log("f_db_tahta_ihale_rapor_bilgileri");
+    function f_db_tahta_ihale_rapor_bilgileri(_tahta_id, _arama) {
+
 
         /*return f_indekslenen_ve_takip_edilen_kalem_idler(_tahta_id)
          .then(function (_kalem_idler) {
@@ -198,11 +198,11 @@ function DB_Tahta() {
                     return [];
                 }
             })
-    };
+    }
 
-    //endregion
+    // endregion
 
-    //region INDEKS İHALE
+    // region INDEKS İHALE
 
     /**
      * tahtanın anahtar kelimelerine göre indeksli ihaleleri getir
@@ -210,7 +210,7 @@ function DB_Tahta() {
      * @param {OptionsIhale=} _opts
      * @returns {Promise} AnahtarKelime[]
      */
-    var f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore = function (_tahta_id, _opts) {
+    function f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore(_tahta_id, _opts) {
         var db_ihale = require("./db_ihale");
 
         // anahtalar diyaliz > 1, fx80 > 25, av-set > 145
@@ -223,9 +223,9 @@ function DB_Tahta() {
                     ? _lstIhaleIdler
                     : db_ihale.f_db_ihale_id(_lstIhaleIdler, _tahta_id, _opts);
             });
-    };
+    }
 
-    var f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore = function (_tahta_id) {
+    function f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id) {
         var db_ihale = require('./db_ihale');
         return result.dbQ.exists(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))
             .then(function (_dbReply) {
@@ -262,14 +262,14 @@ function DB_Tahta() {
             .then(function () {
                 return result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id));
             });
-    };
+    }
 
 
     /**
      * İndekslenmiş ihalelerin tarihe göre sıralanmış halini temp de tutulması sağlanır
      * @param {integer} _tahta_id
      */
-    var f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali = function (_tahta_id) {
+    function f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id) {
         console.log("f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali");
         return f_db_tahta_ihale_indeksli_idler(_tahta_id)
             .then(function () {
@@ -282,7 +282,7 @@ function DB_Tahta() {
                             result.kp.ihale.zsetYapilmaTarihi));
                     });
             });
-    };
+    }
 
     /**
      * İki tarih aralığında anahtara göre indekslenmiş ihaleleri getirir
@@ -290,7 +290,7 @@ function DB_Tahta() {
      * @param _arama
      * @returns {*}
      */
-    var f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali = function (_tahta_id, _arama) {
+    function f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali(_tahta_id, _arama) {
 
         var baslangic = 0,
             bitis = 10,
@@ -327,7 +327,7 @@ function DB_Tahta() {
                         }
                     });
             });
-    };
+    }
 
 
     /**
@@ -337,7 +337,7 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {{Toplam: integer, Gecerli: integer, Gecersiz:integer}}
      */
-    var f_db_tahta_ihale_indeksli_toplami = function (_tahta_id) {
+    function f_db_tahta_ihale_indeksli_toplami(_tahta_id) {
         return f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
             .then(function () {
                 /**
@@ -363,18 +363,18 @@ function DB_Tahta() {
                     };
                 });
             });
-    };
+    }
 
-    //endregion
+    // endregion
 
-    //region TAHTANIN GİZLENEN İHALELERİ
+    // region TAHTANIN GİZLENEN İHALELERİ
 
     /**
      * Kullanıcı tahtada görmek istemediği ihalelerin listesini ihale bilgileriyle dönüyoruz.
      * @param {integer} _tahta_id
      * @param {integer} _ihale_id
      */
-    var f_db_tahta_ihale_gizlenen_tumu = function (_tahta_id) {
+    function f_db_tahta_ihale_gizlenen_tumu(_tahta_id) {
         return f_db_tahta_ihale_gizlenen_idler(_tahta_id)
             .then(function (_ihale_idler) {
                 if (_ihale_idler && _ihale_idler.length > 0) {
@@ -392,14 +392,14 @@ function DB_Tahta() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      * Gizlenen ihale toplamını getirir
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_ihale_gizlenen_toplami = function (_tahta_id) {
+    function f_db_tahta_ihale_gizlenen_toplami(_tahta_id) {
         var db_ihale = require("./db_ihale");
         return result.dbQ.exists(result.kp.temp.ssetTahtaIhaleTumu(_tahta_id))
             .then(function (_iExist) {
@@ -425,33 +425,34 @@ function DB_Tahta() {
                 });
             });
 
-    };
+    }
 
-    var f_db_tahta_ihale_gizlenen_idler = function (_tahta_id) {
+    function f_db_tahta_ihale_gizlenen_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id));
-    };
+    }
 
 
-    //endregion
+    // endregion
 
-    //region AJANDA İŞLEMLERİ
-    var f_db_tahta_ajanda_ekle = function (_tahta_id, _ajanda) {
+    // region AJANDA İŞLEMLERİ
+    function f_db_tahta_ajanda_ekle(_tahta_id, _ajanda) {
         return result.dbQ.hset(result.kp.tahta.hsetTahtaAjanda, _tahta_id, JSON.stringify(_ajanda));
-    };
+    }
 
-    var f_db_tahta_ajanda_sil = function (_tahta_id) {
+    function f_db_tahta_ajanda_sil(_tahta_id) {
         return result.dbQ.hdel(result.kp.tahta.hsetTahtaAjanda, _tahta_id);
-    };
+    }
 
-    var f_db_tahta_ajandasi = function (_tahta_id) {
+    function f_db_tahta_ajandasi(_tahta_id) {
         return (Array.isArray(_tahta_id)
             ? result.dbQ.hmget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id)
             : result.dbQ.hget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id));
 
-    };
-    //endregion
+    }
 
-    //region DAVET İŞLEMLERİ
+    // endregion
+
+    // region DAVET İŞLEMLERİ
     /**
      * Tahtaya eposta ve rolleriyle DAVET eklenmesi.
      * <pre>
@@ -461,7 +462,7 @@ function DB_Tahta() {
      * @param {Integer} _tahta_id
      * @param {{EPosta:String, Roller:Integer[], UID:string}} _yetkisiyleDavetli
      */
-    var f_db_tahta_davet_ekle = function (_tahta_id, _yetkisiyleDavetli) {
+    function f_db_tahta_davet_ekle(_tahta_id, _yetkisiyleDavetli) {
         /**
          HASH olacak tahta:3:davet
          key > uid
@@ -469,7 +470,7 @@ function DB_Tahta() {
          */
         return result.dbQ.hset(result.kp.tahta.hsDavetler(_tahta_id), _yetkisiyleDavetli.UID, JSON.stringify(_yetkisiyleDavetli));
         //return result.dbQ.hset(result.kp.tahta.hsDavetler(_tahta_id), _yetkisiyleDavetli.EPosta, _yetkisiyleDavetli.Roller);
-    };
+    }
 
     /**
      * Daveti kontrol et ve geçerliyse "session.ss.davet.Gecerli = true" diye işaretlenmesine yardımcı ol
@@ -478,7 +479,7 @@ function DB_Tahta() {
      * @param {string} _eposta
      * @returns {Promise}
      */
-    var f_db_tahta_davet_eposta = function (_tahta_id, _davet_id, _eposta) {
+    function f_db_tahta_davet_eposta(_tahta_id, _davet_id, _eposta) {
         return f_db_tahta_davet(_tahta_id, _davet_id)
             .then(function (_davet) {
                 if (_davet && _davet.EPosta == _eposta) {
@@ -487,25 +488,27 @@ function DB_Tahta() {
                     return null;
                 }
             });
-    };
+    }
+
     /**
      * Tahta_id ye yapılmış UID li davetin tüm bilgisini döner
      * @param _tahta_id
      * @param _davetId
      * @returns {*}
      */
-    var f_db_tahta_davet = function (_tahta_id, _davetId) {
+    function f_db_tahta_davet(_tahta_id, _davetId) {
         return result.dbQ.hget_json_parse(result.kp.tahta.hsDavetler(_tahta_id), _davetId);
-    };
+    }
 
     /**
      *
      * @param _tahta_id
      * @returns {Promise}
      */
-    var f_db_tahta_davetleri = function (_tahta_id) {
+    function f_db_tahta_davetleri(_tahta_id) {
         return result.dbQ.hvals_json_parse(result.kp.tahta.hsDavetler(_tahta_id));
-    };
+    }
+
     /**
      * Tahtaya eklenmiş davetin eposta adresi vasıtasıyla silinmesi.
      * <pre>
@@ -515,7 +518,7 @@ function DB_Tahta() {
      * @param {Integer} _tahta_id
      * @param {String} _eposta
      */
-    var f_db_tahta_davet_sil = function (_tahta_id, _eposta) {
+    function f_db_tahta_davet_sil(_tahta_id, _eposta) {
         console.log("davet sil e gelenler:");
         console.log("tahta_id:" + _tahta_id);
         console.log("eposta:" + _eposta);
@@ -530,14 +533,15 @@ function DB_Tahta() {
                     return (davet.length > 0) ?
                         result.dbQ.hdel(result.kp.tahta.hsDavetler(_tahta_id), davet[0].UID) :
                         null;
-                }else{
+                } else {
                     return null;
                 }
             });
-    };
-    //endregion
+    }
 
-    //region ÜYE İŞLEMLERİ
+    // endregion
+
+    // region ÜYE İŞLEMLERİ
     /**
      * tablo         key  value
      * tahta:401:uye   1  [1,2]
@@ -546,9 +550,9 @@ function DB_Tahta() {
      * @param _rol
      * @returns {Promise}
      */
-    var f_db_tahta_uye_rol_guncelle = function (_tahta_id, _uye_id, _rol) {
+    function f_db_tahta_uye_rol_guncelle(_tahta_id, _uye_id, _rol) {
         return result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _uye_id, JSON.stringify(_rol));
-    };
+    }
 
     /**
      *
@@ -558,19 +562,20 @@ function DB_Tahta() {
      * @param {{ Kullanici_Id:Integer, Roller:Integer[] }} _yetkisiyleKullanici
      * @returns {Promise}
      */
-    var f_db_tahta_uye_ekle = function (_tahta_id, _yetkisiyleKullanici) {
+    function f_db_tahta_uye_ekle(_tahta_id, _yetkisiyleKullanici) {
         //üye eklenirken kullanıcı:x:tahtalari:uye tablosuna ve tahta:v:uye tablosuna kayıt ekliyoruz
 
         return result.dbQ.Q.all([
             result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _yetkisiyleKullanici.Kullanici_Id, JSON.stringify(_yetkisiyleKullanici.Roller)),
             result.dbQ.sadd(result.kp.kullanici.ssetUyeOlduguTahtalari(_yetkisiyleKullanici.Kullanici_Id, true), _tahta_id)
         ]);
-    };
+    }
 
-    var f_db_tahta_uye_guncelle = function (_tahta_id, _uye_id, _rol) {
+    function f_db_tahta_uye_guncelle(_tahta_id, _uye_id, _rol) {
         return result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _uye_id, JSON.stringify(_rol.Roller));
-    };
-    var f_db_tahta_uye_sil = function (_tahta_id, _uye_id) {
+    }
+
+    function f_db_tahta_uye_sil(_tahta_id, _uye_id) {
         //tahtadan silinmek istenen üye tahtanın sahibi ise silmesine izin vermiyoruz
         //değilse tahtanın üyeleri setinden kaldırıyoruz
         return result.dbQ.sismember(result.kp.kullanici.ssetSahipOlduguTahtalari(_uye_id, true), _tahta_id)
@@ -584,7 +589,7 @@ function DB_Tahta() {
                     ]);
                 }
             });
-    };
+    }
 
 
     /**
@@ -593,7 +598,7 @@ function DB_Tahta() {
      * @param {OptionsUye=} _opts, Üyelerin hangi bilgilerini istiyoruz
      * @returns {Promise}
      */
-    var f_db_tahta_uyeleri = function (_tahta_id, _opts) {
+    function f_db_tahta_uyeleri(_tahta_id, _opts) {
         var db_kullanici = require('./db_kullanici');
 
         return f_db_aktif_tahta_uye_idleri(_tahta_id)
@@ -605,7 +610,7 @@ function DB_Tahta() {
                 extensions.ssr = [{"f_db_tahta_uyeleri fail": _err}];
                 throw _err;
             });
-    };
+    }
 
     /**
      * x rolüne sahip tahtanın üyelerini döner
@@ -613,7 +618,7 @@ function DB_Tahta() {
      * @param {integer} _rol_id
      * @returns {*}
      */
-    var f_db_tahta_uyeleri_x_rolune_sahip = function (_tahta_id, _rol_id) {
+    function f_db_tahta_uyeleri_x_rolune_sahip(_tahta_id, _rol_id) {
         return f_db_tahta_uyeleri(_tahta_id)
             .then(
                 /**
@@ -623,7 +628,7 @@ function DB_Tahta() {
                 function (_uyeler) {
                     return _uyeler.whereXU({Roller: [_rol_id]});
                 });
-    };
+    }
 
     /**
      * Tahta ile ilişkili kullanıcı id leri
@@ -671,16 +676,16 @@ function DB_Tahta() {
             });
     }
 
-    //endregion
+    // endregion
 
-    //region TAHTA İŞLEMLERİ
+    // region TAHTA İŞLEMLERİ
     /**
      * Sistemdeki tüm tahta nesnelerini lerini döner
      * @returns {*}
      */
-    var f_db_tahta_tumu = function () {
+    function f_db_tahta_tumu() {
         return result.dbQ.hvals_json_parse(result.kp.tahta.tablo);
-    };
+    }
 
     /**
      * ID si verilmiş tahta nesnesini döner
@@ -795,7 +800,7 @@ function DB_Tahta() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    var f_db_tahtadan_ayril = function (_tahta_id, _kul_id) {
+    function f_db_tahtadan_ayril(_tahta_id, _kul_id) {
 
         return result.dbQ.Q.all([
             result.dbQ.srem(result.kp.kullanici.ssetUyeOlduguTahtalari(_kul_id, true), _tahta_id),
@@ -804,7 +809,7 @@ function DB_Tahta() {
             emitter.emit(schema.SABIT.OLAY.TAHTA_AYRIL, _tahta_id, _kul_id);
             return _tahta_id;
         });
-    };
+    }
 
     /**
      * Tahtalar'a yeni tahta ekler, oluşturan kullanıcıyla ilişkilendirir.
@@ -813,11 +818,16 @@ function DB_Tahta() {
      * HSet Tahta _tahta
      * SADD Kullanici:X:Tahta:Sahip IDX
      * </pre>
-     * @param _tahta_db
-     * @param _kul_id
+     * @param {Tahta.Genel} _tahta_db
+     * @param {integer} _kul_id
      * @returns {*}
      */
-    var f_db_tahta_ekle = function (_tahta_db, _kul_id) {
+    function f_db_tahta_ekle(_tahta_db, _kul_id) {
+
+        if (!_kul_id) {
+            throw new exception.Istisna("Kullanıcı bilgisi eksik", "Tahtayı ekleyen kullanıcı bilgisi bulunamadı!");
+        }
+
         /**
          * Tahtanın ilk oluşturulmasında admin kullanıcısını(tahtanın sahibini) tüm rollerle ilişkilendiriyoruz
          * @param _tahta_id
@@ -868,19 +878,11 @@ function DB_Tahta() {
                     result.dbQ.hset(result.kp.tahta.tablo, _id, JSON.stringify(_tahta_db)), // 1
                     rol.f_db_rol_ekle(arrTemelRoller, _tahta_db.Id), // 2
                     result.dbQ.sadd(result.kp.kullanici.ssetSahipOlduguTahtalari(_kul_id, true), _id) // 4
-                ].allX().then(function () {
+                ].allX()
+                    .then(function () {
 
                         l.info("kullanıcı rol ilşkilendir");
                         return tahta_kullanicilarini_rollerle_iliskilendir(_id, _kul_id); // 3
-
-                    })
-                    .then(function () {
-                        //şehirleri ekle
-                        return f_sehirleri_ekle();
-                    })
-                    .then(function () {
-                        //tahta bölge ilikilendirme ve bölge ekleme
-                        return f_tahta_bolge_iliskilendir(_id);
 
                     })
                     .then(function () {
@@ -896,48 +898,6 @@ function DB_Tahta() {
                         return _err;
                     });
             });
-    };
-
-    /**
-     * Bu metod genel bölgeleri sistemde yoksa ekler ve tahta ile ilişkilendirir
-     * @param _tahta_id
-     * @returns {*}
-     */
-    function f_tahta_bolge_iliskilendir(_tahta_id) {
-
-        return result.dbQ.scard(result.kp.bolge.ssetBolgeGenel)
-            .then(function (_iToplam) {
-                if (_iToplam == 0) {
-                    //db de kayıt yok ekle
-                    var bolge = require("./db_bolge");
-                    var arrBolgeler = require("../../public/json/bolgeler.json").data;
-                    return bolge.f_db_bolge_ekle(arrBolgeler);
-                } else {
-                    //genel bölgeler db de kayıtlı
-                    //o zaman bunları tahta ile ilişkilendiriyoruz
-
-                    return _tahta_id;
-                }
-            });
-    }
-
-    /**
-     * Sisteme şehirleri ekliyoruz
-     * @returns {*}
-     */
-    function f_sehirleri_ekle() {
-
-        return result.dbQ.exists(result.kp.sehir.idx)
-            .then(function (_iExist) {
-                if (_iExist == 0) {
-                    //db de kayıt yok ekle
-                    var db_sehir = require("./db_sehir");
-                    var arrSehirler = require("../../public/json/sehirler.json").data;
-                    return db_sehir.f_db_sehir_ekle(arrSehirler);
-                } else {
-                    return null;
-                }
-            });
     }
 
 
@@ -948,7 +908,7 @@ function DB_Tahta() {
      * @param _kul_id
      * @returns {*}
      */
-    var f_db_tahta_guncelle = function (_tahta_db, _kul_id) {
+    function f_db_tahta_guncelle(_tahta_db, _kul_id) {
         delete _tahta_db.Kurum;
         l.info("f_db_tahta_guncelle");
         return result.dbQ.hset(result.kp.tahta.tablo, _tahta_db.Id, JSON.stringify(_tahta_db))
@@ -959,7 +919,7 @@ function DB_Tahta() {
                         return _dbTahta;
                     });
             });
-    };
+    }
 
     /**
      * Silme eyleminde objenin son halini LOG a kaydedilir.
@@ -971,7 +931,7 @@ function DB_Tahta() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    var f_db_tahta_sil = function (_tahta_id, _kul_id) {
+    function f_db_tahta_sil(_tahta_id, _kul_id) {
 
         //_tahta_id nin _kul_id ye ait olması halinde gelmesi gerekiyor. tahta silme sahip olunan tahtalarda geçerlidir.
         return f_db_tahta_id(_tahta_id)
@@ -1009,7 +969,7 @@ function DB_Tahta() {
                             });
                     });
             });
-    };
+    }
 
 
     //TAHTAYA AİT İD LER
@@ -1019,9 +979,9 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_teklif_idleri = function (_tahta_id) {
+    function f_db_tahta_teklif_idleri(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTeklifleri(_tahta_id, true));
-    };
+    }
 
     /**
      * Tahtaya ait kurumları varsa idleri döner
@@ -1029,13 +989,13 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_kurum_idleri = function (_tahta_id) {
+    function f_db_tahta_kurum_idleri(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetOzelKurumlari(_tahta_id, true));
-    };
+    }
 
-    //endregion
+    // endregion
 
-    //region ANAHTAR KELİME EKLE-SİL
+    // region ANAHTAR KELİME EKLE-SİL
     /**
      * Tahtanın anahtar kelimelerini döner
      * @param {integer} _tahta_id
@@ -1043,7 +1003,7 @@ function DB_Tahta() {
      * [{Id:1,AnahtarKelime:'diyalizer'}]
      * @returns {*}
      */
-    var f_db_tahta_anahtar_tumu = function (_tahta_id) {
+    function f_db_tahta_anahtar_tumu(_tahta_id) {
 
         //tahtanın anahtar kelimelerini döner
         return result.dbQ.zrangebyscore([result.kp.tahta.zsetAnahtarKelimeleri(_tahta_id), '-inf', '+inf'])
@@ -1064,7 +1024,7 @@ function DB_Tahta() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      * Tahta ile ilişkili anahtar eklenmesi sağlanır
@@ -1073,7 +1033,7 @@ function DB_Tahta() {
      * @param {integer=} _kul_id
      * @returns {Promise}
      */
-    var f_db_tahta_anahtar_ekle = function (_tahta_id, _anahtar, _kul_id) {
+    function f_db_tahta_anahtar_ekle(_tahta_id, _anahtar, _kul_id) {
 
         return result.f_db_anahtar_ekle(_anahtar.Anahtar)
             .then(
@@ -1091,9 +1051,9 @@ function DB_Tahta() {
                             return _anahtarObjesi;
                         });
                 });
-    };
+    }
 
-    var f_db_tahta_anahtar_sil = function (_tahta_id, _anahtar_id, _kul_id) {
+    function f_db_tahta_anahtar_sil(_tahta_id, _anahtar_id, _kul_id) {
 
         return result.f_db_anahtar_val(_anahtar_id)
             .then(
@@ -1111,8 +1071,9 @@ function DB_Tahta() {
                         throw new exception.Istisna("Anahtar sil", "Anahtar bilgisi BULUNAMADI! Bu nedenle silme tamamlanamadı..");
                     }
                 });
-    };
-    //endregion
+    }
+
+    // endregion
 
     /**
      * @class DBTahta
@@ -1124,17 +1085,14 @@ function DB_Tahta() {
         f_db_tahta_ihale_indeksli_toplami: f_db_tahta_ihale_indeksli_toplami,
         f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore: f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore,
         f_db_tahta_ihale_indeksli_idler: f_db_tahta_ihale_indeksli_idler,
-
         f_db_tahta_ihale_gizlenen_idler: f_db_tahta_ihale_gizlenen_idler,
         f_db_tahta_ihale_gizlenen_toplami: f_db_tahta_ihale_gizlenen_toplami,
         f_db_tahta_ihale_gizlenen_tumu: f_db_tahta_ihale_gizlenen_tumu,
-
         f_db_tahta_ihale_takip_toplami: f_db_tahta_ihale_takip_toplami,
         f_db_tahta_ihale_rapor_bilgileri: f_db_tahta_ihale_rapor_bilgileri,
         f_indekslenen_ve_takip_edilen_ihale_idleri: f_indekslenen_ve_takip_edilen_ihale_idleri,
         f_db_tahta_ihale_takip_idler: f_db_tahta_ihale_takip_idler,
         f_db_tahta_ihale_takip_tumu: f_db_tahta_ihale_takip_tumu,
-
         f_db_tahta_ajanda_ekle: f_db_tahta_ajanda_ekle,
         f_db_tahta_ajanda_sil: f_db_tahta_ajanda_sil,
         f_db_tahta_ajandasi: f_db_tahta_ajandasi,

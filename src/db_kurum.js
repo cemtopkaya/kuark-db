@@ -4,7 +4,8 @@ var exception = require('kuark-istisna').Istisna,
     _ = require('lodash'),
     schema = require("kuark-schema"),
     emitter = new (require('events').EventEmitter)(),
-    l = require('../lib/winstonConfig');
+    extensions = require('kuark-extensions'),
+    l = extensions.winstonConfig;
 
 /**
  * Kurum ekleme:
@@ -845,7 +846,7 @@ function DB_Kurum() {
                                     });
                             })
                             .fail(function (_err) {
-                                ssr = [{"Kurum ekleme hatalı > _err": _err}];
+                                extensions.ssr = [{"Kurum ekleme hatalı > _err": _err}];
                                 throw new exception("Kurum eklenemedi", "Kurum eklenirken HATA ALINDI: " + _err)
                             });
                     });

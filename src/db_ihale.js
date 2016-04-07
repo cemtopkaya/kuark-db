@@ -1,10 +1,10 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    schema = require('kuark-schema'),
+var schema = require('kuark-schema'),
     exception = require('kuark-istisna'),
     emitter = new (require('events').EventEmitter)(),
     extensions = require('kuark-extensions'),
+    l = extensions.winstonConfig,
     _ = require('lodash');
 
 
@@ -40,7 +40,7 @@ function DB_Ihale() {
 
     var result = {};
 
-    //region TAHTALAR ARASI İHALE PAYLAŞ
+    // region TAHTALAR ARASI İHALE PAYLAŞ
     /**
      * Tahtalar arasında özel ihalelerin paylaşılması sağlanır.
      * @param {{From:integer, To:integer[], Ids: integer[]}} _paylas
@@ -91,7 +91,7 @@ function DB_Ihale() {
     };
 
 
-    //endregion
+    // endregion
 
     var f_db_tahta_ihale_gruplama = function (_tahta_id, _kurum_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
         var kurum = require('./db_kurum');
@@ -221,7 +221,7 @@ function DB_Ihale() {
     };
 
 
-    //region İHALE TEKLİFLERİ
+    // region İHALE TEKLİFLERİ
 
     var f_db_ihale_teklif_idleri = function (_tahta_id, _ihale_id, _sayfalama) {
         var defer = result.dbQ.Q.defer();
@@ -268,8 +268,6 @@ function DB_Ihale() {
      * @returns {Promise}
      */
     var f_db_ihale_teklif_tumu = function (_tahta_id, _ihale_id, _arama) {
-        l.info("f_db_ihale_teklif_tumu");
-        l.info(JSON.stringify(_arama));
 
         return f_db_ihale_teklif_idleri(_tahta_id, _ihale_id, _arama.Sayfalama)
             .then(
@@ -316,9 +314,9 @@ function DB_Ihale() {
     };
 
 
-    //endregion
+    // endregion
 
-    //region İHALEYİ YAPAN KURUM
+    // region İHALEYİ YAPAN KURUM
     /**
      * İhale/leri yapan kurum bilgisini döner
      * @param {integer|integer[]|string|string[]} ihale_id
@@ -352,9 +350,9 @@ function DB_Ihale() {
                 return f_db_ihale_yapan_kurum(ihale_id);
             });
     };
-    //endregion
+    // endregion
 
-    //region İHALEYE KATILAN KURUMLARI
+    // region İHALEYE KATILAN KURUMLARI
     var f_db_ihale_kurum_tumu = function (tahta_id, ihale_id) {
         return result.dbQ.sinter(result.kp.tahta.ssetTeklifleri(tahta_id, true), result.kp.ihale.ssetTeklifleri(ihale_id))
             .then(function (_teklif_idler) {
@@ -421,9 +419,9 @@ function DB_Ihale() {
                 }
             });
     };
-    //endregion
+    // endregion
 
-    //region İHALE KALEMLERİNİ ÇEK
+    // region İHALE KALEMLERİNİ ÇEK
     /**
      * Ihaleye bağlı kalemleri getir. Genel olarak ihalenin kalemleri ve ihalenin tahta üstünde ezilmiş kalemlerini
      * birleştirerek getirir.
@@ -579,7 +577,7 @@ function DB_Ihale() {
         return defer.promise;
     };
 
-    //endregion
+    // endregion
 
     var f_db_ihale_sbihale_id = function (sb_ihale_id) {
         return result.dbQ.zscan([result.kp.ihale.zsetSaglikbank, '0', 'match', sb_ihale_id])
@@ -610,7 +608,7 @@ function DB_Ihale() {
     };
 
 
-    //region İHALE İD
+    // region İHALE İD
     /**
      * Tahtanın id den bilgilerini getirir
      * @param {integer|integer[]|string|string[]} _ihale_id
@@ -619,6 +617,8 @@ function DB_Ihale() {
      * @returns {*}
      */
     var f_db_ihale_id = function (_ihale_id, _tahta_id, _opts) {
+        console.log("ihale id ye geldimmmmm");
+        console.log(_ihale_id);
 
         var opts = result.OptionsIhale(_opts);
 
@@ -704,7 +704,7 @@ function DB_Ihale() {
             });
     };
 
-    //endregion
+    // endregion
 
     var f_db_ihale_tumu = function (_tahta_id) {
         /*ihaleleri çekerken>>
@@ -778,7 +778,11 @@ function DB_Ihale() {
         /*sadece genel ihaleleri getiriyoruz*/
         return result.dbQ.smembers(result.kp.ihale.ssetGenel)
             .then(function (_ihaleIdleri) {
-                return f_db_ihale_id(_ihaleIdleri, 0, _opts);
+                if (_ihaleIdleri && _ihaleIdleri.length > 0) {
+                    return f_db_ihale_id(_ihaleIdleri, 0, _opts);
+                } else {
+                    return [];
+                }
             })
             .fail(function (_err) {
                 l.e("ihaleler çekilemedi");
@@ -960,7 +964,7 @@ function DB_Ihale() {
                 var temp_key = "temp_tahta_ihale_" + _tahta_id;
                 result.dbQ.sadd(temp_key, _donen_ihale_idleri)
                     .then(function (_iToplamKayit) {
-                        //region sıralama
+                        // region sıralama
                         _arama.Siralama.forEach(function (_siralama) {
 
                             switch (_siralama.Alan) {
@@ -985,9 +989,9 @@ function DB_Ihale() {
                                     break;
                             }
                         });
-                        //endregion
+                        // endregion
 
-                        //region multi exec
+                        // region multi exec
                         multi.exec(function (_err, _replies) {
 
                             sonuc.ToplamKayitSayisi = _iToplamKayit;
@@ -1006,14 +1010,14 @@ function DB_Ihale() {
                                 defer.resolve(sonuc);
                             }
                         });
-                        //endregion
+                        // endregion
                     });
             }
         });
         return defer.promise;
     };
 
-    //region İHALE (ekle-sil-güncelle)
+    // region İHALE (ekle-sil-güncelle)
 
     /**
      * Ihale kaydedilir ve db'de oluşan şekliyle geri döner
@@ -1485,9 +1489,9 @@ function DB_Ihale() {
             });
     };
 
-    //endregion
+    // endregion
 
-    //region İHALE TEKLİFLERİ
+    // region İHALE TEKLİFLERİ
     /**
      * ihaleye bağlı teklifleri bul
      * @param {integer} tahta_id
@@ -1515,9 +1519,9 @@ function DB_Ihale() {
 
         return defer.promise;
     };
-    //endregion
+    // endregion
 
-    //region İHALEYİ GİZLE/GİZLEME
+    // region İHALEYİ GİZLE/GİZLEME
     /**
      * Kullanıcı tahtada gizlediği ihaleyi tekrardan listede görmek isterse geri alıyoruz
      * @param {integer} _tahta_id
@@ -1636,9 +1640,9 @@ function DB_Ihale() {
             });
     };
 
-    //endregion
+    // endregion
 
-    //region İHALE TAKİP
+    // region İHALE TAKİP
     /**
      * Kullanıcı tahtada takip ettiği ihalelerden çıkartabilir
      * @param {integer} _tahta_id
@@ -1776,7 +1780,7 @@ function DB_Ihale() {
             });
     };
 
-    //endregion
+    // endregion
 
     /**
      * @class DBIhale
@@ -1838,7 +1842,7 @@ function DB_Ihale() {
                     bArrTeklifleri: false,
                     bTakiptemi: true,
                     bOnayDurumu: true
-                }, opts.optsKalem, {}),
+                }, (opts && opts.optsKalem ? opts.optsKalem : {})),
                 bArrKalemleri: false,
                 bYapanKurum: true,
                 bTakip: true

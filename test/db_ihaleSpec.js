@@ -1,13 +1,13 @@
 var db = require("../src/index")(),
     chai = require('chai'),
     should = chai.should,
-    //expect = require("chaimel"),
+//expect = require("chaimel"),
     expect = chai.expect,
     assert = chai.assert,
     schema = require("kuark-schema"),
     extensions = require('kuark-extensions'),
     uuid = require('node-uuid'),
-    l = require('../lib/winstonConfig');
+    l = extensions.winstonConfig;
 
 
 describe("DB İhale işlemleri", function () {
@@ -90,12 +90,14 @@ describe("DB İhale işlemleri", function () {
         opts.bYapanKurum = true;
         opts.bTakip = false;
 
+
         db.ihale.f_db_ihale_tumu_genel(opts)
             .then(function (_ihaleler) {
                 l.info("Tüm ihaleler çekildi. Toplam çekilen ihale sayısı: " + _ihaleler.length);
                 done();
             })
             .fail(function (_err) {
+                console.log("hata>" + JSON.stringify(_err));
                 done(_err);
             });
     });
@@ -121,14 +123,18 @@ describe("DB İhale işlemleri", function () {
     });
 
     it("İhale sil", function (done) {
-        db.ihale.f_db_tahta_ihale_sil(1, 2)
+        var ihale_id = 1,
+            tahta_id = 1;
+        db.ihale.f_db_tahta_ihale_sil(ihale_id, tahta_id)
             .then(function (_res) {
-                assert(false, 'Burada ne bekleniyor!');
+                console.log("gelen sonuc>" + _res);
+                //assert(ihale_id > 0, 'İhale id nin 0 dan büyük olmasını bekliyordum.');
                 done();
             })
             .fail(function (_err) {
-                assert(_err.Icerik=='Silinmek istenen ihale GENEL ihaleler içerisinde kayıtlı olduğu için işlem tamamlanamadı!','Beklenen mesaj gelmedi > '+_err);
-                done();
+                //assert(_err.Icerik == 'Silinmek istenen ihale GENEL ihaleler içerisinde kayıtlı olduğu için işlem tamamlanamadı!', 'Beklenen mesaj gelmedi > ' + _err);
+                done(_err);
+
             });
     });
 

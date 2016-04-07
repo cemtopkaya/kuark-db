@@ -1,9 +1,9 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    schema = require("kuark-schema"),
+var schema = require("kuark-schema"),
     emitter = new (require('events').EventEmitter)(),
     extension = require('kuark-extensions'),
+    l = extension.winstonConfig,
     _ = require('lodash');
 
 /**
@@ -107,7 +107,7 @@ function DB_Kullanici() {
 
             return kullaniciTahtalari.mapX(null, parseInt);
         }).fail(function (_err) {
-            ssr = [{"_err": _err}];
+            extension.ssr = [{"_err": _err}];
             throw _err;
         });
     }

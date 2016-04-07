@@ -1,6 +1,6 @@
 {
   "name": "kuark-db",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Kuark application's db",
   "main": "index.js",
   "directories": {

@@ -3,9 +3,9 @@
 var exception = require('kuark-istisna'),
     schema = require('kuark-schema'),
     emitter = new (require('events').EventEmitter)(),
-    l = require('../lib/winstonConfig'),
     _ = require('lodash'),
-    extension = require('kuark-extensions');
+    extension = require('kuark-extensions'),
+    l = extension.winstonConfig;
 
 /**
  *
@@ -21,7 +21,7 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_kalem_indeksli_idler = function (_tahta_id) {
+    function f_db_kalem_indeksli_idler(_tahta_id) {
         console.log("f_db_kalem_indeksli_idler");
 
         var db_tahta = require('./db_tahta');
@@ -61,7 +61,7 @@ function DB_Kalem() {
                         });
                 }
             });
-    };
+    }
 
 
     /**
@@ -70,7 +70,7 @@ function DB_Kalem() {
      * @param _ihale_id
      * @returns {*}
      */
-    var f_db_kalem_indeksli_idler_ihaleye_bagli = function (_tahta_id, _ihale_id) {
+    function f_db_kalem_indeksli_idler_ihaleye_bagli(_tahta_id, _ihale_id) {
         var db_ihale = require('./db_ihale');
 
         return result.dbQ.Q.all([
@@ -91,7 +91,7 @@ function DB_Kalem() {
                 l.e(hata);
                 return hata;
             });
-    };
+    }
 
     /**
      * İndeksli kalemleri sayfalı getirir
@@ -100,7 +100,7 @@ function DB_Kalem() {
      * @param {UrlQuery} _arama
      * @returns {*}
      */
-    var f_db_kalem_indeksliler_by_page = function (_tahta_id, _ihale_id, _arama) {
+    function f_db_kalem_indeksliler_by_page(_tahta_id, _ihale_id, _arama) {
         l.info("f_db_kalem_indeksliler_by_page");
         var baslangic = 0,
             bitis = 10,
@@ -157,7 +157,7 @@ function DB_Kalem() {
                 }
             });
         return defer.promise;
-    };
+    }
 
     //region KALEMİN İHALESİ
     /**
@@ -166,7 +166,7 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_kalem_ihalesi = function (_kalem_id, _tahta_id) {
+    function f_db_kalem_ihalesi(_kalem_id, _tahta_id) {
         return result.dbQ.hget(result.kp.kalem.hsetIhaleleri, _kalem_id)
             .then(function (_ihale_id) {
                 /** @type {DBIhale} */
@@ -180,25 +180,26 @@ function DB_Kalem() {
 
                 return db_ihale.f_db_ihale_id(_ihale_id, _tahta_id, opts);
             })
-    };
+    }
+
     //endregion
 
     //region TAKİPTEKİ KALEMLER
 
-    var f_db_kalem_takipte_mi = function (_kalem, _tahta_id) {
+    function f_db_kalem_takipte_mi(_kalem, _tahta_id) {
         return result.dbQ.sismember(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem.Id)
             .then(function (_iTakip) {
                 _kalem.Takip = _iTakip == 1;
                 return _kalem;
             });
-    };
+    }
 
     /**
      * Kalemin/kalemlerin takipte olup olmadığını bulup geri döner
      * @param _tahta_id
      * @param _kalemler
      */
-    var f_db_kalem_takip_kontrol = function (_tahta_id, _kalemler) {
+    function f_db_kalem_takip_kontrol(_tahta_id, _kalemler) {
 
         if (Array.isArray(_kalemler) && _kalemler.length > 0) {
 
@@ -207,7 +208,7 @@ function DB_Kalem() {
         } else {
             return f_db_kalem_takipte_mi(_kalemler, _tahta_id);
         }
-    };
+    }
 
     /**
      * Takip edilecek kalem setinden çıkar
@@ -215,9 +216,9 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    var f_db_tahta_kalem_takip_sil = function (_tahta_id, _kalem_id) {
+    function f_db_tahta_kalem_takip_sil(_tahta_id, _kalem_id) {
         return result.dbQ.srem(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem_id);
-    };
+    }
 
     /**
      * Takip edilecek kalem setine ekle
@@ -225,7 +226,7 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    var f_db_tahta_kalem_takip_ekle = function (_tahta_id, _kalem_id) {
+    function f_db_tahta_kalem_takip_ekle(_tahta_id, _kalem_id) {
         //kalem takip edilecek olarak belirlendiğinde ihalesi de takip edilecek olarak ayarlamalıyız
         return result.dbQ.sadd(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem_id)
             .then(function () {
@@ -234,14 +235,14 @@ function DB_Kalem() {
                         return result.dbQ.sadd(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id), _ihale_id);
                     });
             });
-    };
+    }
 
     /**
      * Tahtada takip edilen tüm kalemleri getirir
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_kalem_takip_tumu = function (_tahta_id) {
+    function f_db_tahta_kalem_takip_tumu(_tahta_id) {
         return f_db_kalem_takip_idler(_tahta_id)
             .then(function (_kalem_idler) {
                 if (_kalem_idler && _kalem_idler.length > 0) {
@@ -250,18 +251,18 @@ function DB_Kalem() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      * Tahtanın takip edilen kalem id lerini getirir
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_kalem_takip_idler = function (_tahta_id) {
+    function f_db_kalem_takip_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id));
-    };
+    }
 
-    var f_db_kalem_takip_toplami = function (_tahta_id) {
+    function f_db_kalem_takip_toplami(_tahta_id) {
         return result.dbQ.Q.all([
             f_db_tahta_kalem_idler_aktif(_tahta_id),
             f_db_kalem_takip_idler(_tahta_id)
@@ -276,7 +277,7 @@ function DB_Kalem() {
             sonuc.Gecersiz = toplam - gecerli;
             return sonuc;
         });
-    };
+    }
 
     //endregion
 
@@ -287,7 +288,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id
      * @param {integer} _kalem_id
      */
-    var f_db_kalem_gizlenen_sil = function (_tahta_id, _kalem_id) {
+    function f_db_kalem_gizlenen_sil(_tahta_id, _kalem_id) {
 
         return result.dbQ.srem(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id), _kalem_id)
             .then(function () {
@@ -298,14 +299,14 @@ function DB_Kalem() {
                         return _kalem_id;
                     });
             });
-    };
+    }
 
     /**
      * Kullanıcı tahtada görmek istemediği kalemleri gizleyebilir, böylece listede gizlenenler görünmeyecektir.
      * @param {integer} _tahta_id
      * @param {integer} _kalem_id
      */
-    var f_db_kalem_gizlenen_ekle = function (_tahta_id, _kalem_id) {
+    function f_db_kalem_gizlenen_ekle(_tahta_id, _kalem_id) {
         return result.dbQ.sadd(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id), _kalem_id)
             .then(function () {
                 //kalemin ihalesini buluyoruz ki ihale temp setinde kayıt varsa onları da silelim
@@ -315,14 +316,14 @@ function DB_Kalem() {
                         return _kalem_id;
                     });
             });
-    };
+    }
 
 
     /**
      * Kullanıcı tahtada görmek istemediği kalem listesini dönüyoruz.
      * @param {integer} _tahta_id
      */
-    var f_db_kalem_gizlenen_tumu = function (_tahta_id) {
+    function f_db_kalem_gizlenen_tumu(_tahta_id) {
         return f_db_kalem_gizlenen_idler(_tahta_id)
             .then(function (_kalem_idler) {
                 if (_kalem_idler && _kalem_idler.length > 0) {
@@ -331,14 +332,14 @@ function DB_Kalem() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      * Gizlenen kalem toplamını getirir
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_kalem_gizlenen_toplami = function (_tahta_id) {
+    function f_db_kalem_gizlenen_toplami(_tahta_id) {
 
         return result.dbQ.exists(result.kp.temp.ssetTahtaKalemTumu(_tahta_id))
             .then(function (_iExist) {
@@ -364,11 +365,11 @@ function DB_Kalem() {
             })
 
 
-    };
+    }
 
-    var f_db_kalem_gizlenen_idler = function (_tahta_id) {
+    function f_db_kalem_gizlenen_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id));
-    };
+    }
 
 
     //endregion
@@ -381,7 +382,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id - Tahta id bilgisi olmak zorunda
      * @returns {*}
      */
-    var f_db_kalem_onay_durumu = function (_kalem_id, _tahta_id) {
+    function f_db_kalem_onay_durumu(_kalem_id, _tahta_id) {
         //noinspection JSValidateTypes
         if (!_tahta_id && _tahta_id === 0) {
             return {Id: 2, Baslik: "İlk Kayıt"};
@@ -406,50 +407,46 @@ function DB_Kalem() {
             .fail(function (_err) {
                 throw new exception.Istisna("Kalem onay durumu çekilirken hata alındı:", _err);
             });
-    };
+    }
 
     /**
      * Kalemin onay durumunu değiştirmemizi sağlar. Örneğin teklifti sonra katılıyoruza çekildi.
      * Bu durumda önce teklif setinden kaldırmalı sonra katılıyoruz setine eklemeliyiz
-     * @param {integer} tahta_id
-     * @param {integer} ihale_id
-     * @param {integer} kalem_id
-     * @param {OnayDurumu} onay_durumu
+     * @param {integer} _tahta_id
+     * @param {integer} _ihale_id
+     * @param {integer} _kalem_id
+     * @param {OnayDurumu} _onay_durumu
      */
-    var f_db_kalem_onay_durumu_guncelle = function (tahta_id, ihale_id, kalem_id, onay_durumu) {
+    function f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _kalem_id, _onay_durumu) {
+        var defer = result.dbQ.Q.defer();
 
-        if (onay_durumu && onay_durumu.Id > 0) {
+        if (_onay_durumu && _onay_durumu.Id > 0) {
 
-            return f_db_kalem_onay_durumu(kalem_id, tahta_id)
-                .then(function (/** @type {OnayDurumu} */
-                                _dbDurum) {
-                    if (_dbDurum != null) {
-                        return result.dbQ.srem(result.kp.kalem.ssetOnayDurumlari(tahta_id, _dbDurum.Id), kalem_id);
-                    }
-                    else {
-                        return kalem_id;
-                    }
-                })
-                .then(function () {
-                    return result.dbQ.Q.all([
-                        result.dbQ.hset(result.kp.tahta.hsetKalemOnayDurumlari(tahta_id), kalem_id, JSON.stringify(onay_durumu)),
-                        result.dbQ.sadd(result.kp.kalem.ssetOnayDurumlari(tahta_id, onay_durumu.Id), kalem_id)
-                    ])
+            f_db_kalem_onay_durumu(_kalem_id, _tahta_id)
+                .then(function (/** @type {OnayDurumu} */ _dbDurum) {
+
+                    result.dbQ.Q.all([
+                        (_dbDurum != null ? result.dbQ.srem(result.kp.kalem.ssetOnayDurumlari(_tahta_id, _dbDurum.Id), _kalem_id) : null),
+                        result.dbQ.hset(result.kp.tahta.hsetKalemOnayDurumlari(_tahta_id), _kalem_id, JSON.stringify(_onay_durumu)),
+                        result.dbQ.sadd(result.kp.kalem.ssetOnayDurumlari(_tahta_id, _onay_durumu.Id), _kalem_id)
+                    ]);
                 })
                 .then(function () {
                     //kalemin durumu değiştiğinde elastic tarafını güncellememiz gerekiyor
                     //bu nedenle önce f_db_kalem_id metodundan kalem bilgisi alıp sonra da tetikleme işlemini yapıyoruz
-                    return f_db_kalem_id(kalem_id, tahta_id)
+                    f_db_kalem_id(_kalem_id, _tahta_id)
                         .then(function (_dbKalem) {
-                            emitter.emit(schema.SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI, _dbKalem, ihale_id, tahta_id);
+                            emitter.emit(schema.SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI, _dbKalem, _ihale_id, _tahta_id);
 
-                            return kalem_id;
+                            defer.resolve(_kalem_id);
                         });
                 });
         } else {
-            return kalem_id;
+            defer.resolve(_kalem_id);
         }
-    };
+
+        return defer.promise;
+    }
 
     //endregion
 
@@ -461,7 +458,7 @@ function DB_Kalem() {
      * @param {Sayfalama=} _sayfalama
      * @returns {*}
      */
-    var f_db_kalem_teklif_idleri = function (_tahta_id, _kalem_id, _sayfalama) {
+    function f_db_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama) {
         var defer = result.dbQ.Q.defer();
 
         var multi = result.rc.multi(),
@@ -502,7 +499,7 @@ function DB_Kalem() {
             });
 
         return defer.promise;
-    };
+    }
 
     /**
      * Kaleme bağlı tekliflerini getirir
@@ -511,7 +508,7 @@ function DB_Kalem() {
      * @param {Sayfalama=} _sayfalama
      * @returns {*}
      */
-    var f_db_kalem_teklif_tumu = function (_tahta_id, _kalem_id, _sayfalama) {
+    function f_db_kalem_teklif_tumu(_tahta_id, _kalem_id, _sayfalama) {
         return f_db_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama)
             .then(function (_aktifler) {
                 var sonucAnahtari = result.kp.temp.ssetTahtaKalemTeklifleri(_tahta_id, _kalem_id),
@@ -548,7 +545,7 @@ function DB_Kalem() {
                 }
 
             });
-    };
+    }
 
 
     /**
@@ -557,13 +554,13 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    var f_db_kalem_teklif_kontrol = function (_tahta_id, _kalem_id) {
+    function f_db_kalem_teklif_kontrol(_tahta_id, _kalem_id) {
         if (_tahta_id > 0) {
             return result.dbQ.sinter(result.kp.kalem.ssetTeklifleri(_kalem_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true));
         } else {
             return [];
         }
-    };
+    }
 
     //endregion
 
@@ -574,7 +571,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    var f_db_tahta_kalem_idler_aktif = function (_tahta_id) {
+    function f_db_tahta_kalem_idler_aktif(_tahta_id) {
         var db_ihale = require('./db_ihale'),
             defer = result.dbQ.Q.defer(),
             anahtar = result.kp.temp.ssetTahtaKalem(_tahta_id);
@@ -619,7 +616,7 @@ function DB_Kalem() {
             });
 
         return defer.promise;
-    };
+    }
 
     //SATIR İŞLEMLERİ (ekle-sil-güncelle-bul)
     /**
@@ -629,8 +626,8 @@ function DB_Kalem() {
      * @param {OptionsKalem=} _opts
      * @returns {*}
      */
-    var f_db_kalem_id = function (kalem_id, _tahta_id, _opts) {
-
+    function f_db_kalem_id(kalem_id, _tahta_id, _opts) {
+        console.log("db_kalem");
         var optsKalem = result.OptionsKalem(_opts);
 
         return (Array.isArray(kalem_id)
@@ -644,9 +641,7 @@ function DB_Kalem() {
                 function (_dbKalem) {
                     if (!_dbKalem) {
                         return null;
-                        //throw new exception.Istisna("kalem id bulunamadı", kalem_id + " Kalem_id geçersiz!");
                     }
-
 
                     /**
                      *
@@ -718,13 +713,13 @@ function DB_Kalem() {
                 console.log("DB ERROR oldu: ", _err);
                 throw new exception.Istisna("Kalem bilgisi çekilemedi", "f_db_kalem_id içinde: " + _err);
             });
-    };
+    }
 
 
     //endregion
 
     //region KALEM EKLE-GÜNCELLE-SİL
-    var f_db_kalemleri_ekle = function (_ihale_id, _ihaleKalemleri, _kul_id) {
+    function f_db_kalemleri_ekle(_ihale_id, _ihaleKalemleri, _kul_id) {
         return result.dbQ.incrby(result.kp.kalem.idx, _ihaleKalemleri.length)
             .then(function (_sonKalemId) {
                 var ilkKalemId = _sonKalemId - _ihaleKalemleri.length;
@@ -758,7 +753,7 @@ function DB_Kalem() {
                     result.dbQ.hmset_array(arrKalemIdIhaleId)
                 ]);
             });
-    };
+    }
 
     /**
      * Yeni kalem ekle (genel kalem-ihale dünyasından çekilen..vb)
@@ -767,7 +762,7 @@ function DB_Kalem() {
      * @param _kul_id
      * @returns {*}
      */
-    var f_db_kalem_ekle = function (_ihale_id, _kalem, _kul_id) {
+    function f_db_kalem_ekle(_ihale_id, _kalem, _kul_id) {
 
         return result.dbQ.incr(result.kp.kalem.idx)
             .then(function (_id) {
@@ -793,7 +788,7 @@ function DB_Kalem() {
                         return f_db_kalem_id(_id, 0, opts);
                     });
             });
-    };
+    }
 
     /**
      * Tahtaya yeni kalem ekle
@@ -804,7 +799,7 @@ function DB_Kalem() {
      * @param _kul_id
      * @returns {*}
      */
-    var f_db_kalem_ekle_tahta = function (_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
+    function f_db_kalem_ekle_tahta(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
 
         var onay_durumu = _es_kalem.OnayDurumu;
 
@@ -838,128 +833,73 @@ function DB_Kalem() {
                 l.e(_err);
                 throw new exception.Istisna("kalem eklenemedi", "HATA: " + _err);
             });
-    };
+    }
 
-    /*
-     HASH LOGLAR
-     * ID
-     * LOG:SATIR:1 x
-     * SATIR:1 xx
-     * SATIR:1 xxx
-     *
-     *
-     *
-     * HASH kalem
-     * -- Ekleniyor --
-     * incr idx:kalem                                                        -> id olarak 1 versin
-     * hset kalem | 1 | {.....}                                              -> hset ile HASH içine ekle
-     * zadd ihale:1:satirlari:eklenen | 143123123 | 1                        -> eklendiği tarihle EKLENENLERE yaz ki aktif SATIRLAR bulunabilsin
-     * sadd LOG:kalem:1 | {kullanici:132, tarih:143123123, nesne:{.....} }   -> log oluştur
-     * -- Güncelleme geldi --
-     * hset kalem | 1 | {.....}
-     * sadd LOG:kalem:1 | {.....}
-     * -- Silinecek --
-     * zadd ihale:1:satirlari:silinen | 143126663 | 1
-     * sadd LOG:kalem:1 | {.....}
-     *
-     * SET LOG:SATIR:1
-     * {kullanici:12, tarih:23423423, metin:'ihale eklendi' nesne:obje}
-     * obje2
-     * obje3
-     *
-     * ZSET LOG:SATIR:1
-     * tarih   obje
-     * tarih1  obje2
-     * tarih2  obje3
-     *
-     *
-     * kullanici:1:haberleri:eklenen
-     * {tarih:23423423, metin:'Yeni ihale eklendi' nesne:null, referans_id:'ihale:19'} > <a href="#ihale/19">Yeni ihale eklendi</a>
-     * {tarih:23423423, metin:'{this.nesne.konusu} başlıklı ihale eklendi' nesne:{id:19, konusu:....}, referans_id:'ihale:19'} > <a href="#ihale/19">Yeni ihale eklendi</a>
-     * **/
-    var f_db_kalem_guncelle_tahta = function (_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
+
+    /**
+     * Kalemin güncellenmesi sğlanır
+     * @param _tahta_id
+     * @param _ihale_id
+     * @param _es_kalem
+     * @param _db_kalem
+     * @param _kul_id
+     * @returns {*}
+     */
+    function f_db_kalem_guncelle(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
+
+        // region NOTLAR
+        /*
+         HASH LOGLAR
+         * ID
+         * LOG:SATIR:1 x
+         * SATIR:1 xx
+         * SATIR:1 xxx
+         *
+         *
+         *
+         * HASH kalem
+         * -- Ekleniyor --
+         * incr idx:kalem                                                        -> id olarak 1 versin
+         * hset kalem | 1 | {.....}                                              -> hset ile HASH içine ekle
+         * zadd ihale:1:satirlari:eklenen | 143123123 | 1                        -> eklendiği tarihle EKLENENLERE yaz ki aktif SATIRLAR bulunabilsin
+         * sadd LOG:kalem:1 | {kullanici:132, tarih:143123123, nesne:{.....} }   -> log oluştur
+         * -- Güncelleme geldi --
+         * hset kalem | 1 | {.....}
+         * sadd LOG:kalem:1 | {.....}
+         * -- Silinecek --
+         * zadd ihale:1:satirlari:silinen | 143126663 | 1
+         * sadd LOG:kalem:1 | {.....}
+         *
+         * SET LOG:SATIR:1
+         * {kullanici:12, tarih:23423423, metin:'ihale eklendi' nesne:obje}
+         * obje2
+         * obje3
+         *
+         * ZSET LOG:SATIR:1
+         * tarih   obje
+         * tarih1  obje2
+         * tarih2  obje3
+         *
+         *
+         * kullanici:1:haberleri:eklenen
+         * {tarih:23423423, metin:'Yeni ihale eklendi' nesne:null, referans_id:'ihale:19'} > <a href="#ihale/19">Yeni ihale eklendi</a>
+         * {tarih:23423423, metin:'{this.nesne.konusu} başlıklı ihale eklendi' nesne:{id:19, konusu:....}, referans_id:'ihale:19'} > <a href="#ihale/19">Yeni ihale eklendi</a>
+         * **/
+        // endregion
 
         var onay_durumu = _es_kalem.OnayDurumu,
             orjinal_kalem_id = _db_kalem.Id;
 
-        return f_db_kalem_genel_kontrol(orjinal_kalem_id)
-            .then(function (_iGenel) {
-                if (_iGenel == 1) {
-                    //genel kalem ezilir
-                    return result.dbQ.incr(result.kp.kalem.idx)
-                        .then(function (_id) {
-                            _es_kalem.Id = _db_kalem.Id = _id;
-                            _db_kalem.Orjinal_Id = _es_kalem.Orjinal_Id = orjinal_kalem_id;
+        /**
+         * Genel kalem ise yeni kalem eklenir
+         * @returns {*}
+         */
+        function f_genel_kalem_guncelle() {
+            return result.dbQ.incr(result.kp.kalem.idx)
+                .then(function (_id) {
+                    _es_kalem.Id = _db_kalem.Id = _id;
+                    _db_kalem.Orjinal_Id = _es_kalem.Orjinal_Id = orjinal_kalem_id;
 
-                            emitter.emit(schema.SABIT.OLAY.KALEM_GUNCELLENDI,
-                                {
-                                    tahta_id: _tahta_id,
-                                    yeni_kalem: _es_kalem,
-                                    orjinal_kalem_id: orjinal_kalem_id,
-                                    ihale_id: _ihale_id,
-                                    kul_id: _kul_id
-                                });
-
-                            return result.dbQ.hset(result.kp.kalem.tablo, _db_kalem.Id, JSON.stringify(_db_kalem))
-                                .then(function () {
-
-                                    //onay durumları ile ilgili işlemleri tamamlayacağız
-                                    //satırın onay durumunu eski listeden kaldırıp yenisine ekliyoruz
-                                    //örneğin katılıyoruz (2) demişti sadd tahta:401:durum:2 201 setine eklemiştik
-                                    //sonra gitti itiraz edilecek (3) dedi bu durumda önce gidip katılıyoruz listesinden kaldırıyoruz
-                                    //srem tahta:401:durum:2 201
-                                    return f_db_kalem_onay_durumu(orjinal_kalem_id, _tahta_id)
-                                        .then(function (_dbDurum) {
-                                            if (_dbDurum != null) {
-                                                //eski satıra ait onay durum bilgileri vars siliyoruz
-                                                return result.dbQ.Q.all([
-                                                    result.dbQ.srem(result.kp.kalem.ssetOnayDurumlari(_tahta_id, _dbDurum.Id), orjinal_kalem_id),
-                                                    result.dbQ.hdel(result.kp.tahta.hsetKalemOnayDurumlari(_tahta_id), orjinal_kalem_id)
-                                                ]);
-                                            }
-                                            else {
-                                                return _db_kalem;
-                                            }
-                                        });
-                                })
-                                .then(function () {
-                                    //genel kalemi tahtanın ezilen kalemlerine ekliyoruz
-                                    //tahtanın özel kalemlerine ekliyoruz
-                                    //kalem onay durumları setine ekliyoruz
-                                    return result.dbQ.Q.all([
-                                        result.dbQ.sadd(result.kp.tahta.ssetEzilenKalemleri(_tahta_id), orjinal_kalem_id),
-                                        result.dbQ.sadd(result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, true), _id)
-                                    ]);
-                                })
-                                .then(function () {
-                                    //satırın onay durumlarını düzenle
-                                    return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
-                                })
-                                .then(function () {
-                                    //satıra verilen teklifler ile tahtada verilen tekliflerin kesişimini bulup
-                                    //gelen kayıtları yeni satır id ile ilişkilendiriyoruz
-                                    return result.dbQ.sinter(result.kp.kalem.ssetTeklifleri(orjinal_kalem_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true))
-                                        .then(function (_iTeklif_idler) {
-                                            if (_iTeklif_idler && _iTeklif_idler.length > 0) {
-
-                                                var arrPromises = _.map(_iTeklif_idler, function (_teklif_id) {
-                                                    return result.dbQ.Q.all([
-                                                        result.dbQ.sadd(result.kp.kalem.ssetTeklifleri(_db_kalem.Id), _teklif_id),
-                                                        result.dbQ.srem(result.kp.kalem.ssetTeklifleri(orjinal_kalem_id), _teklif_id),
-                                                        result.dbQ.hset(result.kp.teklif.hsetKalemleri, _teklif_id, _db_kalem.Id)
-                                                    ]);
-                                                });
-
-                                                return result.dbQ.Q.all(arrPromises);
-                                            }
-                                            return _db_kalem.Id;
-                                        });
-                                })
-                                .then(function () {
-                                    return f_db_kalem_id(_db_kalem.Id, _tahta_id);
-                                });
-                        });
-                } else {
                     emitter.emit(schema.SABIT.OLAY.KALEM_GUNCELLENDI,
                         {
                             tahta_id: _tahta_id,
@@ -969,36 +909,117 @@ function DB_Kalem() {
                             kul_id: _kul_id
                         });
 
-                    //özel kalem bilgisinde hash sadece güncellenir
                     return result.dbQ.hset(result.kp.kalem.tablo, _db_kalem.Id, JSON.stringify(_db_kalem))
                         .then(function () {
+
                             //onay durumları ile ilgili işlemleri tamamlayacağız
                             //satırın onay durumunu eski listeden kaldırıp yenisine ekliyoruz
                             //örneğin katılıyoruz (2) demişti sadd tahta:401:durum:2 201 setine eklemiştik
                             //sonra gitti itiraz edilecek (3) dedi bu durumda önce gidip katılıyoruz listesinden kaldırıyoruz
                             //srem tahta:401:durum:2 201
-                            //onay durumu varsa güncelle yoksa satırı döner
-                            return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu)
-                                .then(function () {
-                                    return f_db_kalem_id(_db_kalem.Id, _tahta_id);
+                            return f_db_kalem_onay_durumu(orjinal_kalem_id, _tahta_id)
+                                .then(function (_dbDurum) {
+                                    if (_dbDurum != null) {
+                                        //eski satıra ait onay durum bilgileri vars siliyoruz
+                                        return result.dbQ.Q.all([
+                                            result.dbQ.srem(result.kp.kalem.ssetOnayDurumlari(_tahta_id, _dbDurum.Id), orjinal_kalem_id),
+                                            result.dbQ.hdel(result.kp.tahta.hsetKalemOnayDurumlari(_tahta_id), orjinal_kalem_id)
+                                        ]);
+                                    }
+                                    else {
+                                        return _db_kalem;
+                                    }
                                 });
+                        })
+                        .then(function () {
+                            //genel kalemi tahtanın ezilen kalemlerine ekliyoruz
+                            //tahtanın özel kalemlerine ekliyoruz
+                            //kalem onay durumları setine ekliyoruz
+                            return result.dbQ.Q.all([
+                                result.dbQ.sadd(result.kp.tahta.ssetEzilenKalemleri(_tahta_id), orjinal_kalem_id),
+                                result.dbQ.sadd(result.kp.tahta.ssetOzelKalemleri(_tahta_id, _ihale_id, true), _id)
+                            ]);
+                        })
+                        .then(function () {
+                            //satırın onay durumlarını düzenle
+                            return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
+                        })
+                        .then(function () {
+                            //satıra verilen teklifler ile tahtada verilen tekliflerin kesişimini bulup
+                            //gelen kayıtları yeni satır id ile ilişkilendiriyoruz
+                            return result.dbQ.sinter(result.kp.kalem.ssetTeklifleri(orjinal_kalem_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true))
+                                .then(function (_iTeklif_idler) {
+                                    if (_iTeklif_idler && _iTeklif_idler.length > 0) {
+
+                                        var arrPromises = _.map(_iTeklif_idler, function (_teklif_id) {
+                                            return result.dbQ.Q.all([
+                                                result.dbQ.sadd(result.kp.kalem.ssetTeklifleri(_db_kalem.Id), _teklif_id),
+                                                result.dbQ.srem(result.kp.kalem.ssetTeklifleri(orjinal_kalem_id), _teklif_id),
+                                                result.dbQ.hset(result.kp.teklif.hsetKalemleri, _teklif_id, _db_kalem.Id)
+                                            ]);
+                                        });
+
+                                        return result.dbQ.Q.all(arrPromises);
+                                    }
+                                    return _db_kalem.Id;
+                                });
+                        })
+                        .then(function () {
+                            return f_db_kalem_id(_db_kalem.Id, _tahta_id);
                         });
+                });
+        }
+
+        /**
+         * Tahtaya ait özel kalem güncellenir.
+         * @returns {*}
+         */
+        function f_ozel_kalem_guncelle() {
+            emitter.emit(schema.SABIT.OLAY.KALEM_GUNCELLENDI,
+                {
+                    tahta_id: _tahta_id,
+                    yeni_kalem: _es_kalem,
+                    orjinal_kalem_id: orjinal_kalem_id,
+                    ihale_id: _ihale_id,
+                    kul_id: _kul_id
+                });
+
+            //özel kalem bilgisinde hash sadece güncellenir
+            return result.dbQ.hset(result.kp.kalem.tablo, _db_kalem.Id, JSON.stringify(_db_kalem))
+                .then(function () {
+                    //onay durumları ile ilgili işlemleri tamamlayacağız
+                    //satırın onay durumunu eski listeden kaldırıp yenisine ekliyoruz
+                    //örneğin katılıyoruz (2) demişti sadd tahta:401:durum:2 201 setine eklemiştik
+                    //sonra gitti itiraz edilecek (3) dedi bu durumda önce gidip katılıyoruz listesinden kaldırıyoruz
+                    //srem tahta:401:durum:2 201
+                    //onay durumu varsa güncelle yoksa satırı döner
+                    return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu)
+                        .then(function () {
+                            return f_db_kalem_id(_db_kalem.Id, _tahta_id);
+                        });
+                });
+        }
+
+        return f_db_kalem_genel_kontrol(orjinal_kalem_id)
+            .then(function (_iGenel) {
+                if (_iGenel == 1) {
+                    //genel kalem ezilir
+                    return f_genel_kalem_guncelle();
+
+                } else {
+                   return f_ozel_kalem_guncelle()
                 }
-            })
-            .fail(function (_err) {
-                l.e("Satır güncellenirken hata oluştu. HATA: " + _err);
-                throw new exception.Istisna("kalem güncellenemedi", "HATA: " + _err);
             });
-    };
+    }
 
     /**
      * Bu kalem genel kalemler setinde ise 1 değilse 0 döner
      * @param _kalem_id
      * @returns {*}
      */
-    var f_db_kalem_genel_kontrol = function (_kalem_id) {
+    function f_db_kalem_genel_kontrol(_kalem_id) {
         return result.dbQ.sismember(result.kp.kalem.ssetGenel, _kalem_id);
-    };
+    }
 
     /**
      * Kalem silindiğinde aşağıdaki adımlar gerçekleşir:
@@ -1011,7 +1032,7 @@ function DB_Kalem() {
      * @param {integer=} _kul_id
      * @returns {*}
      */
-    var f_db_kalem_sil_tahta = function (_kalem_id, _tahta_id, _ihale_id, _kul_id) {
+    function f_db_kalem_sil_tahta(_kalem_id, _tahta_id, _ihale_id, _kul_id) {
         if (_kalem_id && _kalem_id > 0) {
             return f_db_kalem_genel_kontrol(_kalem_id)
                 .then(function (_iGenel) {
@@ -1050,7 +1071,7 @@ function DB_Kalem() {
         } else {
             throw new exception.Istisna("Kalem Silinemedi!", "Silinmek istenen kalem_id bulunamadı! Tekrar deneyiniz.");
         }
-    };
+    }
 
 //endregion
 
@@ -1077,7 +1098,7 @@ function DB_Kalem() {
         f_db_kalem_ekle: f_db_kalem_ekle,
         f_db_kalemleri_ekle: f_db_kalemleri_ekle,
         f_db_kalem_ekle_tahta: f_db_kalem_ekle_tahta,
-        f_db_kalem_guncelle_tahta: f_db_kalem_guncelle_tahta,
+        f_db_kalem_guncelle: f_db_kalem_guncelle,
         f_db_kalem_genel_kontrol: f_db_kalem_genel_kontrol,
         f_db_kalem_sil_tahta: f_db_kalem_sil_tahta,
         f_db_kalem_gizlenen_ekle: f_db_kalem_gizlenen_ekle,
@@ -1092,15 +1113,13 @@ function DB_Kalem() {
          * @returns {OptionsKalem}
          */
         OptionsKalem: function (opts) {
-            /** @class OptionsKalem */
-            var optsDefault = {
+
+            /** @type {OptionsKalem}*/
+            return _.extend({
                 bArrTeklifleri: false,
                 bTakiptemi: true,
                 bOnayDurumu: true
-            };
-
-            /** @type {OptionsKalem}*/
-            return _.extend(optsDefault, opts || {})
+            }, opts || {})
         }
     };
     return result;

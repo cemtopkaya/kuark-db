@@ -1,10 +1,10 @@
 'use strict';
 
-var l = require('../lib/winstonConfig'),
-    schema = require("kuark-schema"),
+var schema = require("kuark-schema"),
     emitter = new (require('events').EventEmitter)(),
     exception = require('kuark-istisna'),
     extensions = require('kuark-extensions'),
+    l = extensions.winstonConfig,
     _ = require('lodash');
 
 /**

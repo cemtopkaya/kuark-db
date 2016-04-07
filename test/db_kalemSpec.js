@@ -3,38 +3,39 @@ var db = require("../src/index")(),
     assert = require('chai').assert,
     extension = require('kuark-extensions');
 
-describe("DB_kalem - Kalem Onay Durumları", function () {
+describe("DB Kalem İşlemleri", function () {
 
-    it("Tek kalemin ONAY DURUMUNU bul", function (done) {
-        this.timeout(5000);
-        db.kalem.f_db_kalem_onay_durumu("3", 1)
-            .then(function (_res) {
-                console.log("_Res");
-                console.log(_res);
-                done();
-            })
-            .fail(function (_err) {
-                done(_err);
-            });
+    describe("Kalem Onay Durumları", function () {
+
+        it("Tek kalemin ONAY DURUMUNU bul", function (done) {
+            this.timeout(5000);
+            db.kalem.f_db_kalem_onay_durumu("3", 1)
+                .then(function (_res) {
+                    console.log("_Res");
+                    console.log(_res);
+                    done();
+                })
+                .fail(function (_err) {
+                    done(_err);
+                });
+        });
+
+        it("Dizi halinde kalemlerin ONAY DURUMUNU bul", function (done) {
+            //this.timeout(6000);
+            db.kalem.f_db_kalem_onay_durumu(["4204", "4235"], 1)
+                .then(function (_res) {
+                    console.log("_Res");
+                    console.log(_res);
+                    done();
+                })
+                .fail(function (_err) {
+                    console.log("Hata: ", _err)
+                    done(_err);
+                });
+        });
+
     });
 
-    it("Dizi halinde kalemlerin ONAY DURUMUNU bul", function (done) {
-        //this.timeout(6000);
-        db.kalem.f_db_kalem_onay_durumu(["4204", "4235"], 1)
-            .then(function (_res) {
-                console.log("_Res");
-                console.log(_res);
-                done();
-            })
-            .fail(function (_err) {
-                console.log("Hata: ", _err)
-                done(_err);
-            });
-    });
-
-});
-
-describe("DB_kalem - Kalemin tümü", function () {
 
     it("kalem id ler bul", function (done) {
 
@@ -90,7 +91,7 @@ describe("DB_kalem - Kalemin tümü", function () {
                 done();
             })
             .fail(function (_err) {
-                assert(_err.Icerik=='Silinmek istenen kalem GENEL kalemler içerisinde kayıtlı olduğu için işlem tamamlanamadı!','Silememesini belirten bir mesaj bekledim ama şu hata geldi: '+_err);
+                assert(_err.Icerik == 'Silinmek istenen kalem GENEL kalemler içerisinde kayıtlı olduğu için işlem tamamlanamadı!', 'Silememesini belirten bir mesaj bekledim ama şu hata geldi: ' + _err);
                 done();
             });
     });
@@ -111,9 +112,10 @@ describe("DB_kalem - Kalemin tümü", function () {
     });
 
     it("kalem güncelle", function (done) {
-        /** @type {Kalem} */
-        var kalem = {SiraNo: "6", Aciklama: "aaa", BransKodu: "dd", Miktar: "8", Birim: "adet", Id: 1};
-        db.kalem.f_db_kalem_guncelle_tahta(1, 1, kalem, kalem)
+        /** @type {KalemDB} */
+        var guncellenecek_kalem = {SiraNo: "6", Aciklama: "aaa", BransKodu: "dd", Miktar: "8", Birim: "adet", Id: 1};
+
+        db.kalem.f_db_kalem_guncelle(1, 1, guncellenecek_kalem, guncellenecek_kalem)
             .then(function (_res) {
                 console.log("_Res");
                 console.log(_res);
@@ -123,5 +125,4 @@ describe("DB_kalem - Kalemin tümü", function () {
                 done(_err);
             });
     });
-
 });
