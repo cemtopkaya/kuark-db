@@ -1,6 +1,6 @@
 {
   "name": "kuark-db",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Kuark application's db",
   "main": "index.js",
   "directories": {
@@ -80,7 +80,7 @@
     "elasticsearch": "^10.1.3",
     "emailjs": "^1.0.4",
     "events": "^1.1.0",
-    "kuark-extensions": "0.0.22",
+    "kuark-extensions": "0.0.24",
     "kuark-istisna": "latest",
     "kuark-schema": "0.0.7",
     "lodash": "^4.7.0",

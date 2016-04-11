@@ -998,9 +998,9 @@ function DB_Kurum() {
             .then(function (_yeniKurumId) {
 
                 // Eğer sistemde kayıtlıysa _yeniKurumId boş gelmeyecek
-                return _yeniKurumId // Kayıtlı
+                return (_yeniKurumId // Kayıtlı
                     ? f_db_kurum_id(_yeniKurumId)
-                    : f_db_kurum_ekle(_db_kurum, 0, 0)
+                    : f_db_kurum_ekle(_db_kurum, 0, 0))
                     .then(function (_kurum) { // Kaydedilecek
                         // Gelen kurum_id değerini bizim Kurum.Id ile İhale Dünyası kurumlarına da ekleyelim.
                         result.dbQ.hset(result.kp.kurum.hsetKurum_ihaleDunyasiId, _iIhaleDunyasiKurumId, _kurum.Id);

@@ -383,14 +383,17 @@ function DB_Kalem() {
      * @returns {*}
      */
     function f_db_kalem_onay_durumu(_kalem_id, _tahta_id) {
+
+        var defer = result.dbQ.Q.defer();
+
         //noinspection JSValidateTypes
         if (!_tahta_id && _tahta_id === 0) {
-            return {Id: 2, Baslik: "İlk Kayıt"};
+            defer.resolve({Id: 2, Baslik: "İlk Kayıt"});
             //throw new exception.Istisna("Kalem onay durumu çekilemedi", "Tahta_id bilgisi kalemin onay durumu çekilirken boş bırakılamaz!");
         }
 
         // birden fazla satir_id için hmget_json_parse ile çekilebilir şekilde yazılacak
-        return (Array.isArray(_kalem_id)
+        (Array.isArray(_kalem_id)
             ? result.dbQ.hmget_json_parse(result.kp.tahta.hsetKalemOnayDurumlari(_tahta_id), _kalem_id)
             : result.dbQ.hget_json_parse(result.kp.tahta.hsetKalemOnayDurumlari(_tahta_id), _kalem_id))
             .then(function (_durum) {
@@ -401,12 +404,17 @@ function DB_Kalem() {
 
                 return Array.isArray(_durum)
                     ? _durum.map(f_kalem_durumu)
-                    : f_kalem_durumu(_durum);
+                    : f_kalem_durumu(_durum)
 
             })
+            .then(function (_res) {
+                defer.resolve(_res);
+            })
             .fail(function (_err) {
-                throw new exception.Istisna("Kalem onay durumu çekilirken hata alındı:", _err);
+                defer.reject("Kalem onay durumu çekilirken hata alındı:", _err);
             });
+
+        return defer.promise;
     }
 
     /**
@@ -627,7 +635,6 @@ function DB_Kalem() {
      * @returns {*}
      */
     function f_db_kalem_id(kalem_id, _tahta_id, _opts) {
-        console.log("db_kalem");
         var optsKalem = result.OptionsKalem(_opts);
 
         return (Array.isArray(kalem_id)
@@ -695,11 +702,11 @@ function DB_Kalem() {
                                 return f_db_kalem_onay_durumu(kalem_id, _tahta_id)
                                     .then(function (dbKalemOnayDurumlari) {
 
-                                        dbKalemBilgilerle.forEach(function (_elm, _idx) {
+                                        return dbKalemBilgilerle.map(function (_elm, _idx) {
                                             _elm.OnayDurumu = dbKalemOnayDurumlari[_idx];
+                                            return _elm;
                                         });
 
-                                        return dbKalemBilgilerle;
                                     });
                             })
                             .fail(function (_err) {
@@ -1007,7 +1014,7 @@ function DB_Kalem() {
                     return f_genel_kalem_guncelle();
 
                 } else {
-                   return f_ozel_kalem_guncelle()
+                    return f_ozel_kalem_guncelle()
                 }
             });
     }
