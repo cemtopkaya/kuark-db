@@ -25,9 +25,9 @@ function DB_Urun() {
      * @param {integer} _urun_id
      * @returns {*}
      */
-    var f_db_urun_teklif_kontrol = function (_tahta_id, _urun_id) {
+    function f_urun_teklif_kontrol(_tahta_id, _urun_id) {
         return result.dbQ.smembers(result.kp.urun.ssetTeklifleri(_tahta_id, _urun_id));
-    };
+    }
 
 
     /**
@@ -37,12 +37,12 @@ function DB_Urun() {
      * @param {integer} _parabirim_id
      * @returns {*}
      */
-    var f_db_urunun_kazandigi_teklif_fiyatlari = function (_tahta_id, _urun_id, _parabirim_id) {
+    function f_urunun_kazandigi_teklif_fiyatlari(_tahta_id, _urun_id, _parabirim_id) {
         //l.info("f_db_urunun_kazandigi_teklif_fiyatlari");
         //ürünün kazandığı teklifleri bul
         //bu tekliflerin fiyatlarını getir
-        return f_db_urunun_teklif_fiyatlari_onay_durumuna_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _parabirim_id);
-    };
+        return f_urunun_teklif_fiyatlari_onay_durumuna_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _parabirim_id);
+    }
 
     /**
      * Ürünün onay durumuna göre teklif fiyatlarını getir
@@ -52,10 +52,10 @@ function DB_Urun() {
      * @param {integer} _parabirim_id
      * @returns {Promise}
      */
-    var f_db_urunun_teklif_fiyatlari_onay_durumuna_gore = function (_tahta_id, _urun_id, _onay_durum_id, _parabirim_id) {
+    function f_urunun_teklif_fiyatlari_onay_durumuna_gore(_tahta_id, _urun_id, _onay_durum_id, _parabirim_id) {
         //l.info("f_db_urunun_teklif_fiyatlari_onay_durumuna_gore");
 
-        return f_db_urun_teklif_temp(_tahta_id, _urun_id, _parabirim_id, _onay_durum_id)
+        return f_urun_teklif_temp(_tahta_id, _urun_id, _parabirim_id, _onay_durum_id)
             .then(function () {
                 if (_onay_durum_id && _onay_durum_id > 0) {
                     var anahtar1 = result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _parabirim_id);
@@ -89,7 +89,7 @@ function DB_Urun() {
                         return _.uniq(teklifler.pluckX("Fiyat"), true);
                     });
             });
-    };
+    }
 
     /**
      * Ürününün teklif edildiği TÜM fiyatlar
@@ -98,8 +98,8 @@ function DB_Urun() {
      * @param {integer} _parabirim_id
      * @returns {Promise|{Fiyat:integer[]}}
      */
-    var f_db_urunun_teklif_verildigi_fiyatlari = function (_tahta_id, _urun_id, _parabirim_id) {
-        return f_db_urun_teklif_temp(_tahta_id, _urun_id, _parabirim_id)
+    function f_urunun_teklif_verildigi_fiyatlari(_tahta_id, _urun_id, _parabirim_id) {
+        return f_urun_teklif_temp(_tahta_id, _urun_id, _parabirim_id)
             .then(function () {
                 return result.dbQ.zrangebyscore(result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _parabirim_id), "-inf", "+inf")
                     .then(function (_teklif_idler) {
@@ -129,7 +129,7 @@ function DB_Urun() {
                         }
                     });
             });
-    };
+    }
 
     /**
      * Ürünle ilgili temp leri (para birim ve onay durumlarına göre) oluştur
@@ -139,7 +139,7 @@ function DB_Urun() {
      * @param {integer=} _onay_durum_id
      * @returns {*}
      */
-    var f_db_urun_teklif_temp = function (_tahta_id, _urun_id, _para_id, _onay_durum_id) {
+    function f_urun_teklif_temp(_tahta_id, _urun_id, _para_id, _onay_durum_id) {
 
         //ürüne verilmiş tüm teklifleri para birimine göre teklif tarihleri ile sette tutuyoruz
         var sonucAnahtari = result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _para_id);
@@ -176,7 +176,7 @@ function DB_Urun() {
                     return _iToplam;
                 }
             });
-    };
+    }
 
 
     /**
@@ -189,7 +189,7 @@ function DB_Urun() {
      * @param _tarih2
      * @returns {*}
      */
-    var f_db_urunle_teklif_verilen_ihale_sayisi = function (_tahta_id, _urun_id, _onay_id, _para_id, _tarih1, _tarih2) {
+    function f_urunle_teklif_verilen_ihale_sayisi(_tahta_id, _urun_id, _onay_id, _para_id, _tarih1, _tarih2) {
         //1 ürünle verilen teklifler için temp oluştur
         //2 tarih aralığındaki ihaleleri bul
         //3 ihaleye verilen teklifleri ile ürüne verilen tekliflerin kesişimi varsa ihale tarihinde teklif verildi diye 1 yaz yoksa 0 yaz
@@ -199,7 +199,7 @@ function DB_Urun() {
         var ihale = require('./db_ihale');
 
         return result.dbQ.Q.all([
-            f_db_urun_teklif_temp(_tahta_id, _urun_id, _para_id, _onay_id),//1
+            f_urun_teklif_temp(_tahta_id, _urun_id, _para_id, _onay_id),//1
             ihale.f_db_ihale_idler_aktif_tarih_araligindakiler(_tahta_id, _tarih1, _tarih2)//2
         ]).then(function (_ress) {
             var ihale_idler = _ress[1];
@@ -256,7 +256,7 @@ function DB_Urun() {
                 return [];
             }
         });
-    };
+    }
 
 
     /**
@@ -270,14 +270,14 @@ function DB_Urun() {
      * @param _tarih2
      * @returns {*}
      */
-    var f_db_urunun_teklif_detaylari = function (_tahta_id, _urun_id, _onay_durum_id, _para_id, _bTumTeklifBilgileriyle, _tarih1, _tarih2) {
+    function f_urunun_teklif_detaylari(_tahta_id, _urun_id, _onay_durum_id, _para_id, _bTumTeklifBilgileriyle, _tarih1, _tarih2) {
         _tarih1 = _tarih1 || "-inf";
         _tarih2 = _tarih2 || "+inf";
 
         //1 - ürün teklif idlerini onay durum ve tarih aralığına göre bul
         //2 - teklif bilgilerini dön
 
-        return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2)//1
+        return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2)//1
             .then(function (_teklif_idler) {
                 if (Array.isArray(_teklif_idler) && _teklif_idler.length > 0) {
                     var db_teklif = require('./db_teklif');
@@ -297,7 +297,7 @@ function DB_Urun() {
                     return [];
                 }
             });
-    };
+    }
 
     /**
      *
@@ -309,7 +309,7 @@ function DB_Urun() {
      * @param _tarih2
      * @returns {Promise|Number[]}
      */
-    var f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore = function (_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
+    function f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
         _tarih1 = _tarih1 || "-inf";
         _tarih2 = _tarih2 || "+inf";
 
@@ -318,7 +318,7 @@ function DB_Urun() {
         //2.1- tarih aralığına göre teklif idlerini bul (ürün teklifleri onay durumuna göre temp den)
         //2.2- tarih aralığına göre teklif idlerini bul (ürün teklifleri temp)
 
-        return f_db_urun_teklif_temp(_tahta_id, _urun_id, _para_id, _onay_durum_id)
+        return f_urun_teklif_temp(_tahta_id, _urun_id, _para_id, _onay_durum_id)
             .then(function () {
                 if (_onay_durum_id && _onay_durum_id > 0) {
                     var anahtar1 = result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _para_id);
@@ -331,16 +331,16 @@ function DB_Urun() {
                     return result.dbQ.zrangebyscore(result.kp.temp.zsetUrunTeklifleriParaBirimli(_tahta_id, _urun_id, _para_id), _tarih1, _tarih2);
                 }
             });
-    };
+    }
 
 
-    var f_db_urunun_teklif_toplami = function (_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
+    function f_urunun_teklif_toplami(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2) {
         _tarih1 = _tarih1 || "-inf";
         _tarih2 = _tarih2 || "+inf";
 
         if (_onay_durum_id && _onay_durum_id > 0) {
             //istenen onay durumuna bağlı teklif toplamı
-            return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2)
+            return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, _onay_durum_id, _para_id, _tarih1, _tarih2)
                 .then(function (_teklif_idleri) {
                     return [{
                         OnayDurum: _onay_durum_id,
@@ -349,13 +349,13 @@ function DB_Urun() {
                 });
         } else {
             //tüm onay durumlarına bağlı teklifleri dönüyoruz
-            return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2)
+            return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.TEKLIF, _para_id, _tarih1, _tarih2)
                 .then(function (_iTeklif_idler) {
                     var obj = {OnayDurum: "Teklif", Toplam: _iTeklif_idler.length};
                     return [obj];
                 })
                 .then(function (_arr) {
-                    return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2)
+                    return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.KAZANDI, _para_id, _tarih1, _tarih2)
                         .then(function (_iTeklif_idler) {
                             var obj = {OnayDurum: "Kazandı", Toplam: _iTeklif_idler.length};
                             _arr.push(obj);
@@ -363,7 +363,7 @@ function DB_Urun() {
                         })
                 })
                 .then(function (_arr) {
-                    return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2)
+                    return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.REDDEDILDI, _para_id, _tarih1, _tarih2)
                         .then(function (_iTeklif_idler) {
                             var obj = {OnayDurum: "Reddedildi", Toplam: _iTeklif_idler.length};
                             _arr.push(obj);
@@ -371,7 +371,7 @@ function DB_Urun() {
                         });
                 })
                 .then(function (_arr) {
-                    return f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
+                    return f_urun_teklif_idleri_onay_durum_ve_tarihe_gore(_tahta_id, _urun_id, schema.SABIT.ONAY_DURUM.teklif.IHALEDEN_ATILDI, _para_id, _tarih1, _tarih2)
                         .then(function (_iTeklif_idler) {
                             var obj = {OnayDurum: "İhaleden Atıldı", Toplam: _iTeklif_idler.length};
                             _arr.push(obj);
@@ -379,7 +379,7 @@ function DB_Urun() {
                         });
                 });
         }
-    };
+    }
     //endregion
 
     //region ÜRÜNLE ILIŞKILI KURUM IŞLEMLERI
@@ -389,13 +389,13 @@ function DB_Urun() {
      * @param {integer} _urun_id
      * @returns {*}
      */
-    var f_db_urun_iliskili_kurum_tumu = function (_tahta_id, _urun_id) {
+    function f_urun_iliskili_kurum_tumu(_tahta_id, _urun_id) {
         return result.dbQ.smembers(result.kp.urun.ssetKurumlari(_tahta_id, _urun_id))
             .then(function (_idler) {
                 var db_kurum = require("./db_kurum");
                 return db_kurum.f_db_kurum_id(_idler);
             });
-    };
+    }
 
     /**
      * @function
@@ -404,15 +404,15 @@ function DB_Urun() {
      * @param _kurum_id
      * @returns {null|number}
      */
-    var f_db_urun_iliskili_kurum_ekle = function (_tahta_id, _urun_id, _kurum_id) {
+    function f_urun_iliskili_kurum_ekle(_tahta_id, _urun_id, _kurum_id) {
         if (_kurum_id > 0) {
             return result.dbQ.sadd(result.kp.urun.ssetKurumlari(_tahta_id, _urun_id), _kurum_id);
         }
         return _urun_id;
-    };
-    var f_db_urun_iliskili_kurum_sil = function (_tahta_id, _urun_id, _kurum_id) {
+    }
+    function f_urun_iliskili_kurum_sil(_tahta_id, _urun_id, _kurum_id) {
 
-        return f_db_urun_ureticisi(_urun_id)
+        return f_urun_ureticisi(_urun_id)
             .then(function (_dbUretici) {
                 if (_dbUretici == null) {
                     return result.dbQ.hdel(result.kp.urun.ssetKurumlari(_tahta_id, _urun_id), _kurum_id);
@@ -427,7 +427,7 @@ function DB_Urun() {
                     }
                 }
             });
-    };
+    }
     //endregion
 
     //region ÜRÜN İŞLEMLERİ (EKLE-SİL-GÜNCELLE-BUL)
@@ -437,10 +437,10 @@ function DB_Urun() {
      * @param {integer} _sayfalama
      * @returns {LazyLoadingResponse|Promise}
      */
-    var f_db_urun_tumu = function (_tahta_id, _sayfalama) {
+    function f_urun_tumu(_tahta_id, _sayfalama) {
         //l.info("f_db_urun_tumu");
 
-        return f_db_urun_aktif_urun_idleri(_tahta_id, _sayfalama)
+        return f_urun_aktif_urun_idleri(_tahta_id, _sayfalama)
             .then(
                 /** @param {string[]} _aktifUrun_idleri */
                 function (_aktifUrun_idleri) {
@@ -449,7 +449,7 @@ function DB_Urun() {
                                 ? result.dbQ.scard(result.kp.temp.ssetTahtaUrun(_tahta_id))
                                 : 0),
                             (_aktifUrun_idleri.length > 0
-                                ? f_db_urun_id(_aktifUrun_idleri, _tahta_id)
+                                ? f_urun_id(_aktifUrun_idleri, _tahta_id)
                                 : [])
                         ])
                         .then(function (_dbReplies) {
@@ -463,9 +463,9 @@ function DB_Urun() {
                 l.e("sistemde kayıtlı ürünler çekilemedi." + _err);
                 throw new exception.Istisna("Ürünler çekilemedi", "Sistemde kayıtlı ürünler çekilirken hata alındı: " + _err)
             });
-    };
+    }
 
-    var f_db_urun_aktif_urun_idleri = function (_tahta_id, _sayfalama) {
+    function f_urun_aktif_urun_idleri(_tahta_id, _sayfalama) {
         var sonucAnahtari = result.kp.temp.ssetTahtaUrun(_tahta_id);
         if (_sayfalama) {
             var baslangic = _sayfalama.Sayfa * _sayfalama.SatirSayisi,
@@ -492,14 +492,14 @@ function DB_Urun() {
                         return _aktifUrun_idleri;
                     });
             });
-    };
+    }
 
     /**
      * Ürün/lerin üretici bilgileri
      * @param {integer|integer[]|string|string[]} _urun_id
      * @returns {*}
      */
-    var f_db_urun_ureticisi = function (_urun_id) {
+    function f_urun_ureticisi(_urun_id) {
         return (Array.isArray(_urun_id)
             ? result.dbQ.hmget(result.kp.urun.hsetUreticiler, _urun_id)
             : result.dbQ.hget(result.kp.urun.hsetUreticiler, _urun_id))
@@ -512,7 +512,7 @@ function DB_Urun() {
                 return db_kurum.f_db_kurum_id(_dbUretici_id);
 
             });
-    };
+    }
 
     /**
      * Ürün/lerin bilgisini getirir
@@ -521,8 +521,35 @@ function DB_Urun() {
      * @param {OptionsUrun=} _opts
      * @returns {*}
      */
-    var f_db_urun_id = function (_urun_id, _tahta_id, _opts) {
+    function f_urun_id(_urun_id, _tahta_id, _opts) {
         //ürünü buluyoruz ve bilgilerini geri döndürüyoruz
+
+        /**
+         * ürün bilgisini şemasıyla getirir
+         * @param {UrunDB} _urun
+         * @param {OptionsUrun} _optsUrun
+         * @returns {*}
+         */
+        function f_urun_bilgisi(_urun, _optsUrun) {
+
+            if (!_urun) {
+                return null;
+            }
+
+            var /** @type {Urun} */
+            olusan_urun = schema.f_create_default_object(schema.SCHEMA.URUN);
+
+            olusan_urun = _.extend(olusan_urun, _urun);
+
+            return result.dbQ.Q.all([
+                _optsUrun.bUreticiKurum ? f_urun_ureticisi(_urun.Id) : {Id: 0},
+                _optsUrun.bArrAnahtarKelimeler ? f_urun_anahtar_tumu(_urun.Id, _tahta_id) : [{Id: 0}]
+            ]).then(function (_ress) {
+                olusan_urun.Uretici = /** @type {KurumDB} */_ress[0];
+                olusan_urun.AnahtarKelimeler = /** @type {AnahtarKelime[]} */_ress[1];
+                return olusan_urun;
+            });
+        }
 
         return (Array.isArray(_urun_id)
             ? result.dbQ.hmget_json_parse(result.kp.urun.tablo, _urun_id)
@@ -532,33 +559,6 @@ function DB_Urun() {
                     return null;
 
                 } else {
-
-                    /**
-                     * ürün bilgisini şemasıyla getirir
-                     * @param {UrunDB} _urun
-                     * @param {OptionsUrun} _optsUrun
-                     * @returns {*}
-                     */
-                    var f_urun_bilgisi = function (_urun, _optsUrun) {
-
-                        if (!_urun) {
-                            return null;
-                        }
-
-                        var /** @type {Urun} */
-                        olusan_urun = schema.f_create_default_object(schema.SCHEMA.URUN);
-
-                        olusan_urun = _.extend(olusan_urun, _urun);
-
-                        return result.dbQ.Q.all([
-                            _optsUrun.bUreticiKurum ? f_db_urun_ureticisi(_urun.Id) : {Id: 0},
-                            _optsUrun.bArrAnahtarKelimeler ? f_db_urun_anahtar_tumu(_urun.Id, _tahta_id) : [{Id: 0}]
-                        ]).then(function (_ress) {
-                            olusan_urun.Uretici = /** @type {KurumDB} */_ress[0];
-                            olusan_urun.AnahtarKelimeler = /** @type {AnahtarKelime[]} */_ress[1];
-                            return olusan_urun;
-                        });
-                    };
 
                     var /** @type {OptionsUrun} */
                     opts = result.OptionsUrun(_opts);
@@ -571,7 +571,7 @@ function DB_Urun() {
                             .allX()
                             .then(function (dbUrunBilgilerle) {
 
-                                return f_db_urun_ureticisi(_urun_id)
+                                return f_urun_ureticisi(_urun_id)
                                     .then(function (dbUreticiKurumlar) {
 
                                         dbUrunBilgilerle.forEach(function (_elm, _idx) {
@@ -588,7 +588,7 @@ function DB_Urun() {
                     }
                 }
             });
-    };
+    }
 
 
     /**
@@ -599,10 +599,10 @@ function DB_Urun() {
      * @param {integer=} _kul_id
      * @returns {*}
      */
-    var f_db_urun_ekle = function (_db_urun, _uretici_id, _tahta_id, _kul_id) {
+    function f_urun_ekle(_db_urun, _uretici_id, _tahta_id, _kul_id) {
         //l.info("f_db_urun_ekle");
 
-        var f_urun_ekle = function (_db_urun, _uretici_id, _tahta_id, _kul_id) {
+        function f_urun_ekle(_db_urun, _uretici_id, _tahta_id, _kul_id) {
             //SON EKLENEN ürünün İD SİNİ ÇEK VE EKLEME İŞLEMİNE BAŞLA
             //l.info("f_urun_ekle");
             return result.dbQ.incr(result.kp.urun.idx)
@@ -623,26 +623,26 @@ function DB_Urun() {
                                 return result.dbQ.Q.all([
                                     result.dbQ.sadd(result.kp.kurum.ssetUrunleri(_tahta_id, _uretici_id), _id),
                                     result.dbQ.hset(result.kp.urun.hsetUreticiler, _id, _uretici_id),
-                                    f_db_urun_iliskili_kurum_ekle(_tahta_id, _id, _uretici_id)
+                                    f_urun_iliskili_kurum_ekle(_tahta_id, _id, _uretici_id)
                                 ])
                             } else {
                                 return _db_urun;
                             }
                         })
                         .then(function () {
-                            return f_db_urun_id(_db_urun.Id, _tahta_id)
+                            return f_urun_id(_db_urun.Id, _tahta_id)
                                 .then(function (_dbUrun) {
                                     emitter.emit(schema.SABIT.OLAY.URUN_EKLENDI, _db_urun, _tahta_id, _kul_id);
                                     return _dbUrun;
                                 });
                         });
                 });
-        };
+        }
 
         return Array.isArray(_db_urun)
             ? _db_urun.mapX(null, f_urun_ekle, _uretici_id, _tahta_id, _kul_id).allX()
             : f_urun_ekle(_db_urun, _uretici_id, _tahta_id, _kul_id);
-    };
+    }
 
 
     /**
@@ -656,12 +656,12 @@ function DB_Urun() {
      * @param {integer=} _kul_id
      * @returns {*}
      */
-    var f_db_urun_guncelle = function (_tahta_id, _db_urun, _uretici_id, _kul_id) {
+    function f_urun_guncelle(_tahta_id, _db_urun, _uretici_id, _kul_id) {
 
         emitter.emit(schema.SABIT.OLAY.URUN_GUNCELLENDI, _db_urun, _tahta_id, _kul_id);
 
         //ürünün üreticisi değişti ise eski kurum id den ürününü çıkarıp yenisine ekliyoruz
-        return f_db_urun_ureticisi(_db_urun.Id)
+        return f_urun_ureticisi(_db_urun.Id)
             .then(function (_dbUretici) {
                 if (_dbUretici && _dbUretici.Id > 0) {
                     if (_dbUretici.Id != _uretici_id) {
@@ -669,16 +669,16 @@ function DB_Urun() {
                             result.dbQ.hset(result.kp.urun.hsetUreticiler, _db_urun.Id, _uretici_id),
                             result.dbQ.srem(result.kp.kurum.ssetUrunleri(_tahta_id, _dbUretici.Id), _db_urun.Id),
                             result.dbQ.sadd(result.kp.kurum.ssetUrunleri(_tahta_id, _uretici_id), _db_urun.Id),
-                            f_db_urun_iliskili_kurum_ekle(_tahta_id, _db_urun.Id, _uretici_id),
+                            f_urun_iliskili_kurum_ekle(_tahta_id, _db_urun.Id, _uretici_id),
                             //üretici değiştiğinde ilişkili kurum listesinden kaldırmalıyız
-                            f_db_urun_iliskili_kurum_sil(_tahta_id, _db_urun.Id, _dbUretici.Id)
+                            f_urun_iliskili_kurum_sil(_tahta_id, _db_urun.Id, _dbUretici.Id)
                         ]);
                     }
                 } else {
                     result.dbQ.Q.all([
                         result.dbQ.hset(result.kp.urun.hsetUreticiler, _db_urun.Id, _uretici_id),
                         result.dbQ.sadd(result.kp.kurum.ssetUrunleri(_tahta_id, _uretici_id), _db_urun.Id),
-                        f_db_urun_iliskili_kurum_ekle(_tahta_id, _db_urun.Id, _uretici_id)
+                        f_urun_iliskili_kurum_ekle(_tahta_id, _db_urun.Id, _uretici_id)
                     ]);
                 }
             })
@@ -686,10 +686,10 @@ function DB_Urun() {
                 //l.info("ürünü değiştir ve dön");
                 return result.dbQ.hset(result.kp.urun.tablo, _db_urun.Id, JSON.stringify(_db_urun))
                     .then(function () {
-                        return f_db_urun_id(_db_urun.Id, _tahta_id);
+                        return f_urun_id(_db_urun.Id, _tahta_id);
                     });
             });
-    };
+    }
 
     /**
      * Ürün silinirken tahtanın özel ürünleri setinden çıkartıyoruz
@@ -698,7 +698,7 @@ function DB_Urun() {
      * @param {integer=} _kul_id
      * @returns {*}
      */
-    var f_db_urun_sil = function (_tahta_id, _urun_id, _kul_id) {
+    function f_urun_sil(_tahta_id, _urun_id, _kul_id) {
         //l.info("silinecek ürün_id:" + _urun_id);
 
         // Validasyon yapalım
@@ -712,7 +712,7 @@ function DB_Urun() {
         opts.bArrIliskiliFirmalar = false;
         opts.bUreticiKurum = false;
 
-        return f_db_urun_id(_urun_id, _tahta_id, opts)
+        return f_urun_id(_urun_id, _tahta_id, opts)
             .then(function (_dbUrun) {
 
                 emitter.emit(schema.SABIT.OLAY.URUN_SILINDI, _dbUrun, _tahta_id, _kul_id);
@@ -743,7 +743,7 @@ function DB_Urun() {
             });
 
 
-    };
+    }
 
     //endregion
 
@@ -754,7 +754,7 @@ function DB_Urun() {
      * @param {integer} _tahta_id
      * @returns {Promise}
      */
-    var f_db_urun_anahtar_tumu = function (_urun_id, _tahta_id) {
+    function f_urun_anahtar_tumu(_urun_id, _tahta_id) {
         console.log("f_db_urun_anahtar_tumu");
         return (Array.isArray(_urun_id)
             ? _urun_id.mapX(null, f_urun_anahtar_bilgisi, _tahta_id).allX()
@@ -786,7 +786,7 @@ function DB_Urun() {
                         }
                     });
         }
-    };
+    }
 
     /**
      * Ürünle ilişkili anahtar eklenmesi sağlanır.
@@ -795,7 +795,7 @@ function DB_Urun() {
      * @param {AnahtarKelime} _anahtar
      * @returns {*}
      */
-    var f_db_urun_anahtar_ekle = function (_tahta_id, _urun_id, _anahtar) {
+    function f_urun_anahtar_ekle(_tahta_id, _urun_id, _anahtar) {
         return result.f_db_anahtar_ekle(_anahtar.Anahtar)
             .then(
                 /**
@@ -814,9 +814,9 @@ function DB_Urun() {
                         return _anahtarObjesi;
                     });
                 });
-    };
+    }
 
-    var f_db_urun_anahtar_sil = function (_tahta_id, _urun_id, _anahtar_id) {
+    function f_urun_anahtar_sil(_tahta_id, _urun_id, _anahtar_id) {
         //return result.dbQ.zrem(result.kp.urun.zsetAnahtarKelimeleri(tahta_id, urun_id), _anahtarKelime);
         //l.info("f_db_urun_anahtar_sil");
 
@@ -827,7 +827,7 @@ function DB_Urun() {
                 return result.dbQ.zrem(result.kp.urun.zsetAnahtarKelimeleri(_tahta_id, _urun_id), _dbAnahtar.Anahtar);
             });
 
-    };
+    }
     //endregion
 
     //region TAHTALAR ARASI URUN PAYLAŞ
@@ -836,25 +836,28 @@ function DB_Urun() {
      * @param {{From:int, To:int[], Ids: int[]}} _paylas
      * @returns {*}
      */
-    var f_db_urun_paylas = function (_paylas) {
+    function f_urun_paylas(_paylas) {
+
+        function _f_urun_paylas(_from, _to, _ids) {
+
+            return result.dbQ.Q.all([
+                result.dbQ.del(result.kp.temp.ssetTahtaUrun(_to)),
+                result.dbQ.sadd(result.kp.tahta.ssetOzelUrunleri(_to, true), _ids)
+            ]);
+        }
+
         if (Array.isArray(_paylas.To) && _paylas.To.length > 0) {
             var arr = _paylas.To.map(function (_tahta_id) {
-                return f_urun_paylas(_paylas.From, _tahta_id, _paylas.Ids);
+                return _f_urun_paylas(_paylas.From, _tahta_id, _paylas.Ids);
             });
             return result.dbQ.Q.all(arr);
 
         } else {
-            return f_urun_paylas(_paylas.From, _paylas.To, _paylas.Ids);
+            return _f_urun_paylas(_paylas.From, _paylas.To, _paylas.Ids);
         }
-    };
+    }
 
-    var f_urun_paylas = function (_from, _to, _ids) {
 
-        return result.dbQ.Q.all([
-            result.dbQ.del(result.kp.temp.ssetTahtaUrun(_to)),
-            result.dbQ.sadd(result.kp.tahta.ssetOzelUrunleri(_to, true), _ids)
-        ]);
-    };
     //endregion
 
 
@@ -862,27 +865,27 @@ function DB_Urun() {
      * @class DBUrun
      */
     result = {
-        f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore: f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore,
-        f_db_urunun_teklif_verildigi_fiyatlari: f_db_urunun_teklif_verildigi_fiyatlari,
-        f_db_urunun_kazandigi_teklif_fiyatlari: f_db_urunun_kazandigi_teklif_fiyatlari,
-        f_db_urunle_teklif_verilen_ihale_sayisi: f_db_urunle_teklif_verilen_ihale_sayisi,
-        f_db_urunun_teklif_toplami: f_db_urunun_teklif_toplami,
-        f_db_urun_paylas: f_db_urun_paylas,
-        f_db_urun_aktif_urun_idleri: f_db_urun_aktif_urun_idleri,
-        f_db_urunun_teklif_detaylari: f_db_urunun_teklif_detaylari,
-        f_db_urun_teklif_kontrol: f_db_urun_teklif_kontrol,
-        f_db_urun_iliskili_kurum_tumu: f_db_urun_iliskili_kurum_tumu,
-        f_db_urun_iliskili_kurum_ekle: f_db_urun_iliskili_kurum_ekle,
-        f_db_urun_iliskili_kurum_sil: f_db_urun_iliskili_kurum_sil,
-        f_db_urun_ureticisi: f_db_urun_ureticisi,
-        f_db_urun_tumu: f_db_urun_tumu,
-        f_db_urun_id: f_db_urun_id,
-        f_db_urun_ekle: f_db_urun_ekle,
-        f_db_urun_guncelle: f_db_urun_guncelle,
-        f_db_urun_sil: f_db_urun_sil,
-        f_db_urun_anahtar_tumu: f_db_urun_anahtar_tumu,
-        f_db_urun_anahtar_ekle: f_db_urun_anahtar_ekle,
-        f_db_urun_anahtar_sil: f_db_urun_anahtar_sil,
+        f_db_urun_teklif_idleri_onay_durum_ve_tarihe_gore: f_urun_teklif_idleri_onay_durum_ve_tarihe_gore,
+        f_db_urunun_teklif_verildigi_fiyatlari: f_urunun_teklif_verildigi_fiyatlari,
+        f_db_urunun_kazandigi_teklif_fiyatlari: f_urunun_kazandigi_teklif_fiyatlari,
+        f_db_urunle_teklif_verilen_ihale_sayisi: f_urunle_teklif_verilen_ihale_sayisi,
+        f_db_urunun_teklif_toplami: f_urunun_teklif_toplami,
+        f_db_urun_paylas: f_urun_paylas,
+        f_db_urun_aktif_urun_idleri: f_urun_aktif_urun_idleri,
+        f_db_urunun_teklif_detaylari: f_urunun_teklif_detaylari,
+        f_db_urun_teklif_kontrol: f_urun_teklif_kontrol,
+        f_db_urun_iliskili_kurum_tumu: f_urun_iliskili_kurum_tumu,
+        f_db_urun_iliskili_kurum_ekle: f_urun_iliskili_kurum_ekle,
+        f_db_urun_iliskili_kurum_sil: f_urun_iliskili_kurum_sil,
+        f_db_urun_ureticisi: f_urun_ureticisi,
+        f_db_urun_tumu: f_urun_tumu,
+        f_db_urun_id: f_urun_id,
+        f_db_urun_ekle: f_urun_ekle,
+        f_db_urun_guncelle: f_urun_guncelle,
+        f_db_urun_sil: f_urun_sil,
+        f_db_urun_anahtar_tumu: f_urun_anahtar_tumu,
+        f_db_urun_anahtar_ekle: f_urun_anahtar_ekle,
+        f_db_urun_anahtar_sil: f_urun_anahtar_sil,
         /**
          *
          * @param opts - Ezilecek değerleri taşıyan nesne

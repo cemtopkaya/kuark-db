@@ -14,11 +14,11 @@ function DB_Yorum() {
          */
         result = {};
 
-    var f_db_yorum_id = function (_id) {
+    function f_yorum_id(_id) {
         return result.dbQ.hget_json_parse(result.kp.yorum.tablo, _id);
     };
 
-    var f_db_yorum_ekle = function (tahta_id, kul_id, yorum) {
+    function f_yorum_ekle(tahta_id, kul_id, yorum) {
         yorum.Kul_Id = kul_id;
 
         return result.dbQ.incr(result.dbQ.kp.yorum.idx)
@@ -40,7 +40,7 @@ function DB_Yorum() {
             });
     };
 
-    var f_db_yorum_sil = function (tahta_id, yorum_id) {
+    function f_yorum_sil(tahta_id, yorum_id) {
         throw "HENÜZ HAZIRLANMADI";
     };
 
@@ -48,9 +48,9 @@ function DB_Yorum() {
      * @class DBYorum
      */
     result = {
-        f_db_yorum_ekle: f_db_yorum_ekle,
-        f_db_yorum_id: f_db_yorum_id,
-        f_db_yorum_sil: f_db_yorum_sil
+        f_db_yorum_ekle: f_yorum_ekle,
+        f_db_yorum_id: f_yorum_id,
+        f_db_yorum_sil: f_yorum_sil
     };
     return result;
 }

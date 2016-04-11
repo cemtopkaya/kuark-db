@@ -24,11 +24,11 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {*}
      */
-    var f_db_cop_tahta_sil = function (_tahta_id, _kullanici_id) {
+    function f_cop_tahta_sil(_tahta_id, _kullanici_id) {
         //tahtayı sil
         var tahta = require('./db_tahta');
         return tahta.f_db_tahta_sil(_tahta_id, _kullanici_id);
-    };
+    }
 
     /**
      * İhale silme işleminde yapılacak adımlar
@@ -41,7 +41,7 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {*}
      */
-    var f_db_cop_ihale_sil = function (_tahta_id, _ihale_id, _kullanici_id) {
+    function f_cop_ihale_sil(_tahta_id, _ihale_id, _kullanici_id) {
         var ihale = require('./db_ihale');
         return ihale.f_db_ihale_genel_kontrol(_ihale_id)
             .then(function (_iGenel) {
@@ -64,7 +64,7 @@ function DB_Cop_Kutusu() {
                         });
                 }
             });
-    };
+    }
 
     /**
      * Kalem silme işleminde yapılacak adımlar
@@ -78,7 +78,7 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {*}
      */
-    var f_db_cop_kalem_sil = function (_tahta_id, _ihale_id, _kalem_id, _kullanici_id) {
+    function f_cop_kalem_sil(_tahta_id, _ihale_id, _kalem_id, _kullanici_id) {
         var kalem = require('./db_kalem');
         return kalem.f_db_kalem_genel_kontrol(_kalem_id)
             .then(function (_iGenel) {
@@ -100,7 +100,7 @@ function DB_Cop_Kutusu() {
                         })
                 }
             });
-    };
+    }
 
     /**
      * Kurum silme işleminde yapılacak adımlar
@@ -113,7 +113,7 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {*}
      */
-    var f_db_cop_kurum_sil = function (_tahta_id, _kurum_id, _kullanici_id) {
+    function f_cop_kurum_sil(_tahta_id, _kurum_id, _kullanici_id) {
         var kurum = require('./db_kurum');
         return kurum.f_db_kurum_genel_kontrol(_kurum_id)
             .then(function (_iGenel) {
@@ -134,7 +134,7 @@ function DB_Cop_Kutusu() {
                         });
                 }
             });
-    };
+    }
 
     /**
      * Kurum silme işleminde yapılacak adımlar
@@ -146,7 +146,7 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {*}
      */
-    var f_db_cop_urun_sil = function (_tahta_id, _urun_id, _kullanici_id) {
+    function f_cop_urun_sil(_tahta_id, _urun_id, _kullanici_id) {
         var urun = require('./db_urun');
         return urun.f_db_urun_teklif_kontrol(_tahta_id, _urun_id)
             .then(function (_teklifler) {
@@ -159,7 +159,7 @@ function DB_Cop_Kutusu() {
                     return urun.f_db_urun_sil(_tahta_id, _urun_id, _kullanici_id);
                 }
             });
-    };
+    }
 
     /**
      * Teklif silme işleminde yapılacak adımlar
@@ -170,21 +170,21 @@ function DB_Cop_Kutusu() {
      * @param {integer=} _kullanici_id
      * @returns {Promise}
      */
-    var f_db_cop_teklif_sil = function (_tahta_id, _teklif_id, _kullanici_id) {
+    function f_cop_teklif_sil(_tahta_id, _teklif_id, _kullanici_id) {
         var teklif = require('./db_teklif');
         return teklif.f_db_teklif_sil(_teklif_id, _tahta_id, _kullanici_id);
-    };
+    }
 
     /**
      * @class DBCopKutusu
      */
     result = {
-        f_db_cop_tahta_sil: f_db_cop_tahta_sil,
-        f_db_cop_ihale_sil: f_db_cop_ihale_sil,
-        f_db_cop_kalem_sil: f_db_cop_kalem_sil,
-        f_db_cop_kurum_sil: f_db_cop_kurum_sil,
-        f_db_cop_urun_sil: f_db_cop_urun_sil,
-        f_db_cop_teklif_sil: f_db_cop_teklif_sil
+        f_db_cop_tahta_sil: f_cop_tahta_sil,
+        f_db_cop_ihale_sil: f_cop_ihale_sil,
+        f_db_cop_kalem_sil: f_cop_kalem_sil,
+        f_db_cop_kurum_sil: f_cop_kurum_sil,
+        f_db_cop_urun_sil: f_cop_urun_sil,
+        f_db_cop_teklif_sil: f_cop_teklif_sil
     };
     return result;
 }

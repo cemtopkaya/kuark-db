@@ -14,7 +14,7 @@ function DB_Doviz() {
     /** @type {DBDoviz} */
     var result = {};
 
-    function f_db_doviz_kurlari_cek(_adet, _iKurDeger_id) {
+    function f_doviz_kurlari_cek(_adet, _iKurDeger_id) {
 
         var defer = result.dbQ.Q.defer(),
             config = {
@@ -68,18 +68,18 @@ function DB_Doviz() {
      * @param {int} _adet
      * @returns {*}
      */
-    function f_db_doviz_kurlari_cek_ekle(_adet) {
+    function f_doviz_kurlari_cek_ekle(_adet) {
 
-        return f_db_son_kur_deger_id()
+        return f_son_kur_deger_id()
             .then(function (_iLast) {
                 var id = _iLast && _iLast > 0 ? _iLast : 0;
-                return f_db_doviz_kurlari_cek(_adet, id)
-                    .then(f_db_doviz_kurlari_ekle);
+                return f_doviz_kurlari_cek(_adet, id)
+                    .then(f_doviz_kurlari_ekle);
             });
     }
 
 
-    function f_db_doviz_kurlari_ekle(_dovizKurlari) {
+    function f_doviz_kurlari_ekle(_dovizKurlari) {
         var mapDoviz = new Map();
 
         if (Array.isArray(_dovizKurlari) && !_dovizKurlari.length) {
@@ -123,11 +123,11 @@ function DB_Doviz() {
      * Vt de kayıtlı son kurdeger_id değerini verir.
      * @returns {*}
      */
-    function f_db_son_kur_deger_id() {
+    function f_son_kur_deger_id() {
         return result.dbQ.get(result.kp.doviz.idx);
     }
 
-    function f_db_doviz_tarih_araligindaki_kurlari_getir(_paraBirim_id, _kurTipi_id, _tarih1, _tarih2) {
+    function f_doviz_tarih_araligindaki_kurlari_getir(_paraBirim_id, _kurTipi_id, _tarih1, _tarih2) {
         return result.dbQ.zrangebyscore(result.kp.doviz.zsetKurlari(_paraBirim_id, _kurTipi_id), _tarih1, _tarih2)
             .then(function (_arrKurlar) {
                 return _arrKurlar.map(function (_elm) {
@@ -140,11 +140,11 @@ function DB_Doviz() {
      * @class DBDoviz
      */
     result = {
-        f_db_son_kur_deger_id: f_db_son_kur_deger_id,
-        f_db_doviz_kurlari_cek_ekle: f_db_doviz_kurlari_cek_ekle,
-        f_db_doviz_kurlari_cek: f_db_doviz_kurlari_cek,
-        f_db_doviz_kurlari_ekle: f_db_doviz_kurlari_ekle,
-        f_db_doviz_tarih_araligindaki_kurlari_getir: f_db_doviz_tarih_araligindaki_kurlari_getir
+        f_db_son_kur_deger_id: f_son_kur_deger_id,
+        f_db_doviz_kurlari_cek_ekle: f_doviz_kurlari_cek_ekle,
+        f_db_doviz_kurlari_cek: f_doviz_kurlari_cek,
+        f_db_doviz_kurlari_ekle: f_doviz_kurlari_ekle,
+        f_db_doviz_tarih_araligindaki_kurlari_getir: f_doviz_tarih_araligindaki_kurlari_getir
     };
 
     return result;

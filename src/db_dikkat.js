@@ -15,7 +15,7 @@ function DB_Dikkat() {
     /** @type {DBDikkat} */
     var result = {};
 
-    var f_db_dikkat_toplam = function (_kul_id, _yeni, _silinen, _okunan) {
+    function f_dikkat_toplam(_kul_id, _yeni, _silinen, _okunan) {
         if (_yeni == true && _silinen == true && _okunan == true) {
             var anahtar = result.kp.temp.zsetKullaniciDikkatTumu(_kul_id);
             result.dbQ.exists(anahtar)
@@ -37,9 +37,9 @@ function DB_Dikkat() {
         } else {
             return result.dbQ.zcard(result.kp.kullanici.zsetDikkat(_kul_id, _yeni, _silinen, _okunan));
         }
-    };
+    }
 
-    var f_db_dikkat_tumu = function (_kul_id, _yeni, _silinen, _okunan, _iSayfa, _iAdet) {
+    function f_dikkat_tumu(_kul_id, _yeni, _silinen, _okunan, _iSayfa, _iAdet) {
         l.info("f_db_dikkat_tumu")
         extensions.ssg = [{"f_db_dikkat_tumu": arguments}];
 
@@ -85,9 +85,9 @@ function DB_Dikkat() {
                     }
                 });
         }
-    };
+    }
 
-    var f_db_dikkat_ekle = function (kul_id, id) {
+    function f_dikkat_ekle(kul_id, id) {
         l.info("f_db_dikkat_ekle");
 
         return result.dbQ.zadd(result.kp.kullanici.zsetDikkat(kul_id, true, false, false), new Date().getTime(), id)
@@ -95,16 +95,16 @@ function DB_Dikkat() {
                 emitter.emit(schema.SABIT.OLAY.DIKKAT_EKLENDI, kul_id);
                 return id;
             });
-    };
+    }
 
-    var f_db_dikkat_guncelle = function (kul_id, id, yeni, silinen, okunan) {
+    function f_dikkat_guncelle(kul_id, id, yeni, silinen, okunan) {
         return result.dbQ.Q.all([
             result.dbQ.zrem(result.kp.kullanici.zsetDikkat(kul_id, true, false, false), id),
             result.dbQ.zadd(result.kp.kullanici.zsetDikkat(kul_id, yeni, silinen, okunan), new Date().getTime(), id)
         ]);
-    };
+    }
 
-    var f_db_dikkat_sil = function (kul_id, id) {
+    function f_dikkat_sil(kul_id, id) {
         //okunan ve eklenenden silip
         //silinene ekliyoruz
 
@@ -116,17 +116,17 @@ function DB_Dikkat() {
                 emitter.emit(schema.SABIT.OLAY.DIKKAT_SILINDI, kul_id);
                 return id;
             });
-    };
+    }
 
     /**
      * @class DBDikkat
      */
     result = {
-        f_db_dikkat_toplam: f_db_dikkat_toplam,
-        f_db_dikkat_tumu: f_db_dikkat_tumu,
-        f_db_dikkat_ekle: f_db_dikkat_ekle,
-        f_db_dikkat_guncelle: f_db_dikkat_guncelle,
-        f_db_dikkat_sil: f_db_dikkat_sil
+        f_db_dikkat_toplam: f_dikkat_toplam,
+        f_db_dikkat_tumu: f_dikkat_tumu,
+        f_db_dikkat_ekle: f_dikkat_ekle,
+        f_db_dikkat_guncelle: f_dikkat_guncelle,
+        f_db_dikkat_sil: f_dikkat_sil
     };
     return result;
 }

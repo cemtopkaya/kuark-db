@@ -21,7 +21,7 @@ function DB_Olay() {
      * DB de olaylar anahtarı oluşmamışsa yaratılacak
      * Olay anahtarını başlatıp içine eventleri koyacağız
      */
-    var f_init_db_olay = function () {
+    function f_init_db_olay() {
         // OLAY anahtarı yoksa oluştur ve olayları ekle
         return result.dbQ.exists(result.kp.olay.tablo)
             .then(function (_intVarYok) {
@@ -32,20 +32,20 @@ function DB_Olay() {
                      }*/
                 }
             });
-    };
+    }
 
     /**
      * sistemde kayıtlı tüm olayları çek
      * @returns {OLAY|{ROL_EKLENDI, ROL_GUNCELLENDI, ROL_SILINDI, URUN_EKLENDI, URUN_GUNCELLENDI, URUN_SILINDI, KURUM_EKLENDI, KURUM_GUNCELLENDI, KURUM_SILINDI, IHALE_EKLENDI, IHALE_GUNCELLENDI, IHALE_SILINDI, IHALE_TARIHI_ERTELENDI, KALEM_EKLENDI, KALEM_GUNCELLENDI, KALEM_SILINDI, KALEM_DURUMU_GUNCELLENDI, TAHTA_ANAHTAR_EKLENDI, TAHTA_ANAHTAR_SILINDI, URUN_ANAHTAR_EKLENDI, URUN_ANAHTAR_SILINDI, TEKLIF_EKLENDI, TEKLIF_GUNCELLENDI, TEKLIF_SILINDI, TEKLIF_DURUMU_GUNCELLENDI}}
      */
-    var f_db_olay_tumu = function () {
+    function f_olay_tumu() {
 
         return schema.SABIT.OLAY;
-    };
+    }
 
-    var f_db_tetiklenecek_olay_tumu = function () {
+    function f_tetiklenecek_olay_tumu() {
         return result.dbQ.smembers(result.kp.uyari.ssetTetiklenecekOlay);
-    };
+    }
 
     /**
      * GERÇEKLEŞEN_OLAY_KUYRUĞU'na OLAY ekleme
@@ -53,7 +53,7 @@ function DB_Olay() {
      * @param {int} _nesne_id
      * @returns {number}
      */
-    var f_db_olay_kuyruguna_ekle = function (_olay, _nesne_id) {
+    function f_olay_kuyruguna_ekle(_olay, _nesne_id) {
 
         return result.dbQ.sismember(result.kp.uyari.ssetTetiklenecekOlay, _olay)
             .then(function (_dbVarYok) {
@@ -64,7 +64,7 @@ function DB_Olay() {
                     return 0;
                 }
             });
-    };
+    }
 
     /**
      * gerçekleşen olay kuyrugundan çıkar
@@ -72,10 +72,10 @@ function DB_Olay() {
      * @param {integer|integer[]} _nesne_idler
      * @returns {*}
      */
-    var f_db_olay_kuyrugundan_sil = function (_olay, _nesne_idler) {
+    function f_olay_kuyrugundan_sil(_olay, _nesne_idler) {
         l.info("f_db_olay_kuyrugundan_sil");
         return result.dbQ.srem(_olay, _nesne_idler);
-    };
+    }
 
     var olaylar = [
         {
@@ -575,11 +575,11 @@ function DB_Olay() {
 
     /** @class DBOlay */
     result = {
-        f_db_tetiklenecek_olay_tumu: f_db_tetiklenecek_olay_tumu,
+        f_db_tetiklenecek_olay_tumu: f_tetiklenecek_olay_tumu,
         f_init_db_olay: f_init_db_olay,
-        f_db_olay_tumu: f_db_olay_tumu,
-        f_db_olay_kuyruguna_ekle: f_db_olay_kuyruguna_ekle,
-        f_db_olay_kuyrugundan_sil: f_db_olay_kuyrugundan_sil,
+        f_db_olay_tumu: f_olay_tumu,
+        f_db_olay_kuyruguna_ekle: f_olay_kuyruguna_ekle,
+        f_db_olay_kuyrugundan_sil: f_olay_kuyrugundan_sil,
         SABIT: {
             OLAYLAR: olaylar
         }

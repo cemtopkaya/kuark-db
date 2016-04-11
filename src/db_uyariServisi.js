@@ -21,7 +21,7 @@ function DB_UyariServisi() {
         arrTetiklenecekOlaylar = null,
         arrUyarilar = null;
 
-    var f_db_uyari_sonucu_ekle = function (_sonuc) {
+   function f_uyari_sonucu_ekle(_sonuc) {
 
         //var uid = uuid.v1();
         return result.dbQ.incr(result.kp.uyari.idxUyariSonuc)
@@ -33,9 +33,9 @@ function DB_UyariServisi() {
                         return _id;
                     });
             });
-    };
+    }
 
-    var f_google_takvime_ekle = function (kul, tahta, ihale) {
+    function f_google_takvime_ekle(kul, tahta, ihale) {
 
         function f_add_event(accessToken, calendarId, event) {
             var gcal = require('google-calendar');
@@ -77,7 +77,7 @@ function DB_UyariServisi() {
         };
 
         return f_add_event(kul.Providers.GP.token, tahta.Ajanda.GC.Id, kayit);
-    };
+    }
 
     //region YARDIMCI
     /**
@@ -85,9 +85,9 @@ function DB_UyariServisi() {
      * @param {string} _olay
      * @returns {*}
      */
-    var f_olaya_uygun_idler = function (_olay) {
+   function f_olaya_uygun_idler(_olay) {
         return result.dbQ.smembers(_olay);
-    };
+    }
 
     /**
      * Tahtanın görebileceği id ler ile uyarı olayında kayıtlı id lerin kesişimi bulup dönüyoruz.
@@ -96,7 +96,7 @@ function DB_UyariServisi() {
      * @param {int} _tahta_id
      * @returns {*}
      */
-    var f_db_nesne_idleri = function (_olay, _tahta_id) {
+   function f_nesne_idleri(_olay, _tahta_id) {
         return f_olaya_uygun_idler(_olay)
             .then(function (_cekilen_idler) {
                 if (_cekilen_idler && _cekilen_idler.length > 0) {
@@ -171,14 +171,14 @@ function DB_UyariServisi() {
                     return null;
                 }
             });
-    };
+    }
 
     /**
      * Olay tipine göre elastic tipi belirlenir.
      * @param {string} _olay
      * @returns {string}
      */
-    var f_elastic_tipi = function (_olay) {
+   function f_elastic_tipi(_olay) {
         var tipi = "";
         switch (_olay) {
             case schema.SABIT.OLAY.IHALE_EKLENDI:
@@ -239,14 +239,14 @@ function DB_UyariServisi() {
                 break;
         }
         return tipi;
-    };
+    }
 
     /**
      * Gelen olaya göre kalemin onay durum_id sini elde edeceğiz.
      * @param {string} _olay
      * @returns {string}
      */
-    var f_kalem_onay_durum_idsi = function (_olay) {
+   function f_kalem_onay_durum_idsi(_olay) {
         var tipi = "";
         switch (_olay) {
             case schema.SABIT.OLAY.KALEM_KATILIYORUZ:
@@ -284,13 +284,14 @@ function DB_UyariServisi() {
                 break;
         }
         return tipi;
-    };
+    }
+    
     /**
      * Gelen olaya göre TEKLİF onay durum_id sini elde edeceğiz.
      * @param {string} _olay
      * @returns {string}
      */
-    var f_teklif_onay_durum_idsi = function (_olay) {
+   function f_teklif_onay_durum_idsi(_olay) {
         var tipi = "";
         switch (_olay) {
             case schema.SABIT.OLAY.TEKLIF_KAZANDI:
@@ -313,9 +314,9 @@ function DB_UyariServisi() {
                 break;
         }
         return tipi;
-    };
+    }
 
-    var f_elastic_filter = function (_idler, _uyari, _tipi) {
+   function f_elastic_filter(_idler, _uyari, _tipi) {
         if (_idler && _idler != null) {
 
             var idler = {
@@ -331,9 +332,9 @@ function DB_UyariServisi() {
         }
 
         return _uyari.Elastic;
-    };
+    }
 
-    var f_haber_icerik_bilgisi = function (_tip, _obj) {
+   function f_haber_icerik_bilgisi(_tip, _obj) {
         if (_tip.indexOf(schema.SABIT.TABLO_ADI.IHALE) != -1) {
             return _obj.Konusu + " konulu yeni İHALE eklendi.";
         }
@@ -352,9 +353,9 @@ function DB_UyariServisi() {
         else if (_tip.indexOf(schema.SABIT.TABLO_ADI.YORUM) != -1) {
             return _obj.Icerik + " içerikli YORUM eklendi.";
         }
-    };
+    }
 
-    var f_detay_olustur = function (_islem, _uyari, _elm) {
+   function f_detay_olustur(_islem, _uyari, _elm) {
         return {
             //Tahta_Id: _uyari.Tahta_Id,
             //ES: _uyari.RENDER.ElasticQuery,
@@ -367,9 +368,9 @@ function DB_UyariServisi() {
             Sonuc: _elm,
             Uyari: _uyari
         };
-    };
+    }
 
-    var f_uye_id_array = function (_uyari) {
+   function f_uye_id_array(_uyari) {
         var ids = [];
         if (Array.isArray(_uyari.RENDER.Uyeler.id_listesi)) {
             ids = _uyari.RENDER.Uyeler.id_listesi;
@@ -379,14 +380,14 @@ function DB_UyariServisi() {
             ids = [].concat(_uyari.RENDER.Uyeler.id_listesi);
         }
         return ids;
-    };
+    }
 
     //region ALERT
     /**
      * alert seçilmiş kullanıcı:1:haberleri tablosuna kayıt ekler
      * @returns {*}
      */
-    var f_alert_secildi = function (_uyari) {
+   function f_alert_secildi(_uyari) {
 
         l.info("f_alert_secildi");
 
@@ -394,18 +395,18 @@ function DB_UyariServisi() {
 
         return _uyari.RENDER.Sonuc.Data.map(function (_elm) {
             var detay = f_detay_olustur(schema.SABIT.UYARI.ALERT, _uyari, _elm);
-            return f_db_uyari_sonucu_ekle(detay)
+            return f_uyari_sonucu_ekle(detay)
                 .then(function (_id) {
                     var db_dikkat = require('./db_dikkat');
 
                     return ids.mapX(null, db_dikkat.f_db_dikkat_ekle, _id).allX();
                 });
         }).allX();
-    };
+    }
     //endregion
 
     //region TO-DO
-    var f_todo_secildi = function (_uyari) {
+   function f_todo_secildi(_uyari) {
 
         l.info("f_todo_secildi");
 
@@ -414,7 +415,7 @@ function DB_UyariServisi() {
 
         return _uyari.RENDER.Sonuc.Data.map(function (_elm) {
                 var detay = f_detay_olustur(schema.SABIT.UYARI.TODO, _uyari, _elm);
-                return f_db_uyari_sonucu_ekle(detay)
+                return f_uyari_sonucu_ekle(detay)
                     .then(function (_id) {
 
                         var db_gorev = require('./db_gorev');
@@ -426,7 +427,7 @@ function DB_UyariServisi() {
             })
             .allX();
 
-    };
+    }
     //endregion
 
     //region MAİL
@@ -439,7 +440,7 @@ function DB_UyariServisi() {
      * @param _uyari_id
      * @returns {*}
      */
-    var f_mail_icerik_olustur_html = function (_tahta_id, _tipi, _olay, _sonuc, _uyari_id) {
+   function f_mail_icerik_olustur_html(_tahta_id, _tipi, _olay, _sonuc, _uyari_id) {
         var defer = result.dbQ.Q.defer();
 
         /** @type {OptionsTahta} */
@@ -518,24 +519,24 @@ function DB_UyariServisi() {
                 defer.resolve(icerik);
             });
         return defer.promise;
-    };
+    }
 
-    var f_mail_uyari_sonucu_olustur = function (_tahta_id, _tipi, _uyeler, _sonuc, _uyari) {
+   function f_mail_uyari_sonucu_olustur(_tahta_id, _tipi, _uyeler, _sonuc, _uyari) {
         l.info("f_mail_uyari_sonucu_olustur")
 
         var ids = f_uye_id_array(_uyari);
 
         return _sonuc.Data.map(function (_elm) {
             var detay = f_detay_olustur(schema.SABIT.UYARI.MAIL, _uyari, _elm);
-            return f_db_uyari_sonucu_ekle(detay)
+            return f_uyari_sonucu_ekle(detay)
                 .then(function (_sonuc_id) {
                     var db_ileti = require('./db_ileti');
                     return ids.mapX(null, db_ileti.f_db_ileti_ekle, _sonuc_id).allX();
                 });
         }).allX();
-    };
+    }
 
-    var f_mail_secildi = function (_uyari) {
+   function f_mail_secildi(_uyari) {
         var defer = result.dbQ.Q.defer();
         l.info("f_mail_secildi");
 
@@ -568,11 +569,11 @@ function DB_UyariServisi() {
 
         return defer.promise;
 
-    };
+    }
     //endregion
 
 
-    /* var f_uyari_sonucuna_ekle1 = function (_tipi, _uyari, _sorgu) {
+    /* function f_uyari_sonucuna_ekle1(_tipi, _uyari, _sorgu) {
      var defer = result.dbQ.Q.defer();
 
      var uid = uuid.v1(),
@@ -597,7 +598,7 @@ function DB_UyariServisi() {
      * @param _from
      * @returns {*}
      */
-    var f_elastic_sorgula = function (_tipi, _query, _size, _from) {
+   function f_elastic_sorgula(_tipi, _query, _size, _from) {
         return elastic.f_search({
             method: "POST",
             index: schema.SABIT.ELASTIC.INDEKS.APP,
@@ -606,7 +607,7 @@ function DB_UyariServisi() {
             size: _size,
             from: _from
         });
-    };
+    }
 
 
     /**
@@ -615,7 +616,7 @@ function DB_UyariServisi() {
      * @param {int[]} _rol_ids
      * @param {object} _uyari
      */
-    var f_role_bagli_uyeler = function (_tahta_id, _rol_ids, _uyari) {
+   function f_role_bagli_uyeler(_tahta_id, _rol_ids, _uyari) {
         //o role sahip üyeleri çekeceğiz
         l.info("---------f_role_bagli_uyeler-----------")
 
@@ -648,11 +649,11 @@ function DB_UyariServisi() {
             });
 
         return defer.promise;
-    };
+    }
     //endregion
 
     //region UYARI ÇALIŞTIR
-    var f_olayi_tetikle = function (_tetiklenecek_olay_adi) {
+   function f_olayi_tetikle(_tetiklenecek_olay_adi) {
         l.info("Tetiklenecek Olay:: %s", _tetiklenecek_olay_adi);
         var defer = result.dbQ.Q.defer();
 
@@ -666,14 +667,14 @@ function DB_UyariServisi() {
             });
 
         return defer.promise;
-    };
+    }
 
 
     /**
      * Uyarıyı çalıştır
      * @param _uyari
      */
-    var f_uyari_calistir = function (_uyari) {
+   function f_uyari_calistir(_uyari) {
 
         function Uyari(_uyarim) {
             this.alert = _uyarim;
@@ -883,7 +884,7 @@ function DB_UyariServisi() {
             l.info("------------------ f_ES_hazirla_diger -------------- > " + alert.Olay);
             alert.RENDER.Tipi = tipi;
 
-            return f_db_nesne_idleri(alert.Olay, alert.Tahta_Id)
+            return f_nesne_idleri(alert.Olay, alert.Tahta_Id)
                 .then(function (_idler) {
                     if (_idler != null) {
                         var query = f_elastic_filter(_idler, alert, alert.RENDER.Tipi);
@@ -1241,13 +1242,13 @@ function DB_UyariServisi() {
 
         var uyari = new Uyari(_uyari);
         return uyari.f_calis();
-    };
+    }
 
     /**
      * Tüm oluşturulan uyarıları çekip işleme göre tetikler.
      * @returns {*}
      */
-    var f_servis_uyarilari_cek_calistir = function () {
+   function f_servis_uyarilari_cek_calistir() {
 
         var defer = result.dbQ.Q.defer();
 
@@ -1278,7 +1279,7 @@ function DB_UyariServisi() {
             });
 
         return defer.promise;
-    };
+    }
     //endregion
 
     /**
@@ -1286,7 +1287,7 @@ function DB_UyariServisi() {
      */
     result = {
         f_servis_uyarilari_cek_calistir: f_servis_uyarilari_cek_calistir,
-        f_db_uyari_sonucu_ekle: f_db_uyari_sonucu_ekle
+        f_db_uyari_sonucu_ekle: f_uyari_sonucu_ekle
     };
 
     return result;

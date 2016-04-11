@@ -1,3 +1,6 @@
+var schema = require('kuark-schema'),
+    _ = require("lodash");
+
 /**
  *
  * @returns {DBUyari}
@@ -14,18 +17,18 @@ function DB_Uyari() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_uyarilar_tahta_tumu = function (_tahta_id) {
+    function f_uyarilar_tahta_tumu(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetUyarilari(_tahta_id, true))
             .then(function (_uyari_idleri) {
-                return f_db_uyari_id(_uyari_idleri, _tahta_id);
+                return f_uyari_id(_uyari_idleri, _tahta_id);
             });
-    };
+    }
 
     /**
      * sistemde kayıtlı tüm AKTİF uyarılar listesini döner
      * @returns {*}
      */
-    var f_db_uyarilar_tumu = function () {
+    function f_uyarilar_tumu() {
         //eklenen uyarıların idlerini ve pasife alınan uyarıların id lerini bulup
         //pasifte olmayan idlerini bulup bilgilerini dönüyoruz
         return result.dbQ.Q.all([
@@ -47,7 +50,7 @@ function DB_Uyari() {
                 return [];
 
             });
-    };
+    }
 
 
     /**
@@ -57,7 +60,7 @@ function DB_Uyari() {
      * @param {OptionsUyari=} _opt
      * @returns {*}
      */
-    var f_db_uyari_id = function (_uyari_id, _tahta_id, _opt) {
+    function f_uyari_id(_uyari_id, _tahta_id, _opt) {
 
         /** @type {OptionsUyari} */
         var opts = result.OptionsUyari(_opt);
@@ -98,9 +101,8 @@ function DB_Uyari() {
                         });
                 }
 
-
             });
-    };
+    }
 
     /**
      * Uyarı ekle
@@ -108,7 +110,7 @@ function DB_Uyari() {
      * @param {object} _uyari
      * @returns {*}
      */
-    var f_db_uyari_ekle = function (_tahta_id, _uyari) {
+    function f_uyari_ekle(_tahta_id, _uyari) {
         /*
          * - idx'i arttır
          * - hset UYARILAR idx _uyari
@@ -139,17 +141,17 @@ function DB_Uyari() {
                         }
                     })
                     .then(function () {
-                        return f_db_uyari_id(_uyari.Id, _tahta_id);
+                        return f_uyari_id(_uyari.Id, _tahta_id);
                     });
             });
-    };
+    }
 
-    var f_db_uyari_kopyala = function (_tahta_id, _uyari_id) {
-        return f_db_uyari_id(_uyari_id, _tahta_id)
+    function f_uyari_kopyala(_tahta_id, _uyari_id) {
+        return f_uyari_id(_uyari_id, _tahta_id)
             .then(function (_dbUyari) {
-                return f_db_uyari_ekle(_tahta_id, _dbUyari);
+                return f_uyari_ekle(_tahta_id, _dbUyari);
             });
-    };
+    }
 
     /**
      * Uyarıyı güncelle
@@ -157,7 +159,7 @@ function DB_Uyari() {
      * @param {object} _uyari
      * @returns {*}
      */
-    var f_db_uyari_guncelle = function (_tahta_id, _uyari) {
+    function f_uyari_guncelle(_tahta_id, _uyari) {
         return result.dbQ.hset(result.kp.uyari.tablo, _uyari.Id, JSON.stringify(_uyari))
             .then(function () {
                 //uyarının durumuna göre (true/false) sete ekleyeceğiz
@@ -170,9 +172,9 @@ function DB_Uyari() {
                 }
             })
             .then(function () {
-                return f_db_uyari_id(_uyari.Id, _tahta_id)
+                return f_uyari_id(_uyari.Id, _tahta_id)
             });
-    };
+    }
 
     /**
      * Uyarıyı sil
@@ -181,12 +183,12 @@ function DB_Uyari() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    var f_db_uyari_sil = function (_tahta_id, _uyari_id, _kul_id) {
+    function f_uyari_sil(_tahta_id, _uyari_id, _kul_id) {
         return result.dbQ.Q.all([
             result.dbQ.srem(result.kp.tahta.ssetUyarilari(_tahta_id, true), _uyari_id),
             result.dbQ.sadd(result.kp.tahta.ssetUyarilari(_tahta_id, false), _uyari_id)
         ]);
-    };
+    }
 
 
     /**
@@ -199,13 +201,13 @@ function DB_Uyari() {
             "sms": "sms",
             "todo": "todo"
         },
-        f_db_uyari_id: f_db_uyari_id,
-        f_db_uyari_sil: f_db_uyari_sil,
-        f_db_uyari_guncelle: f_db_uyari_guncelle,
-        f_db_uyari_ekle: f_db_uyari_ekle,
-        f_db_uyarilar_tumu: f_db_uyarilar_tumu,
-        f_db_uyarilar_tahta_tumu: f_db_uyarilar_tahta_tumu,
-        f_db_uyari_kopyala: f_db_uyari_kopyala,
+        f_db_uyari_id: f_uyari_id,
+        f_db_uyari_sil: f_uyari_sil,
+        f_db_uyari_guncelle: f_uyari_guncelle,
+        f_db_uyari_ekle: f_uyari_ekle,
+        f_db_uyarilar_tumu: f_uyarilar_tumu,
+        f_db_uyarilar_tahta_tumu: f_uyarilar_tahta_tumu,
+        f_db_uyari_kopyala: f_uyari_kopyala,
         /**
          *
          * @param opts - Ezilecek değerleri taşıyan nesne

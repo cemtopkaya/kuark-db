@@ -14,12 +14,12 @@ function DB_Ileti() {
      */
     var result = {};
 
-    var f_db_ileti_toplam = function (_kul_id) {
+    function f_ileti_toplam(_kul_id) {
         l.info("f_db_ileti_toplam");
         return result.dbQ.zcard(result.kp.kullanici.zsetIleti(_kul_id));
-    };
+    }
 
-    var f_db_ileti_tumu = function (_kul_id, _iSayfa, _iAdet) {
+    function f_ileti_tumu(_kul_id, _iSayfa, _iAdet) {
         l.info("f_db_ileti_tumu");
         return result.dbQ.zrevrangebyscore(result.kp.kullanici.zsetIleti(_kul_id), '+inf', '-inf',"LIMIT",_iSayfa,_iAdet)
             .then(function (_idler) {
@@ -29,20 +29,20 @@ function DB_Ileti() {
                     return [];
                 }
             });
-    };
+    }
 
-    var f_db_ileti_ekle = function (kul_id, id) {
+    function f_ileti_ekle(kul_id, id) {
         l.info("f_db_ileti_ekle");
         return result.dbQ.zadd(result.kp.kullanici.zsetIleti(kul_id), new Date().getTime(), id);
-    };
+    }
 
     /**
      * @class DBIleti
      */
     result = {
-        f_db_ileti_toplam: f_db_ileti_toplam,
-        f_db_ileti_tumu: f_db_ileti_tumu,
-        f_db_ileti_ekle: f_db_ileti_ekle
+        f_db_ileti_toplam: f_ileti_toplam,
+        f_db_ileti_tumu: f_ileti_tumu,
+        f_db_ileti_ekle: f_ileti_ekle
     };
     return result;
 }

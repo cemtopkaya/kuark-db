@@ -1,6 +1,7 @@
 'use strict';
 
-var l = require('kuark-extensions').winstonConfig;
+var l = require('kuark-extensions').winstonConfig,
+    schema = require('kuark-schema');
 
 /**
  *
@@ -13,7 +14,7 @@ function DB_Bolge() {
     var result = {};
 
     //region BÖLGE
-    var f_db_bolge_tumu = function (_tahta_id) {
+    function f_bolge_tumu(_tahta_id) {
         /** @type {LazyLoadingResponse} */
         var sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
         if (!_tahta_id || _tahta_id == 0) {
@@ -21,7 +22,7 @@ function DB_Bolge() {
             return result.dbQ.smembers(result.kp.bolge.ssetBolgeGenel)
                 .then(function (_bolge_idler) {
                     if (_bolge_idler && _bolge_idler.length > 0) {
-                        return f_db_bolge_id(_bolge_idler)
+                        return f_bolge_id(_bolge_idler)
                             .then(function (_dbBolgeler) {
                                 sonuc.ToplamKayitSayisi = parseInt(_dbBolgeler.length);
                                 sonuc.Data = _dbBolgeler;
@@ -46,7 +47,7 @@ function DB_Bolge() {
                         result.dbQ.expire(anahtar, 10)
                     ]).then(function (_ress) {
                         if (_ress[0] && _ress[0].length > 0) {
-                            return f_db_bolge_id(_ress[0])
+                            return f_bolge_id(_ress[0])
                                 .then(function (_dbBolgeler) {
                                     sonuc.ToplamKayitSayisi = parseInt(_dbBolgeler.length);
                                     sonuc.Data = _dbBolgeler;
@@ -62,14 +63,14 @@ function DB_Bolge() {
                 });
             //endregion
         }
-    };
+    }
 
     /**
      * Bölge/lerin bilgisini döner
      * @param {integer|integer[]|string|string[]} _id
      * @returns {*}
      */
-    var f_db_bolge_id = function (_id) {
+    function f_bolge_id(_id) {
         if (!_id) {
             return null;
         }
@@ -78,14 +79,14 @@ function DB_Bolge() {
         } else {
             return result.dbQ.hget_json_parse(result.kp.bolge.tablo, _id);
         }
-    };
+    }
 
     /**
      * Bölge adından bölgeyi bulup geri döner
      * @param {string} _bolgeAdi
      * @returns {*}
      */
-    var f_db_bolge_bul_adindan = function (_bolgeAdi) {
+    function f_bolge_bul_adindan(_bolgeAdi) {
         return result.dbQ.hgetall_array(result.kp.bolge.tablo)
             .then(function (_arrBolgeler) {
                 if (_arrBolgeler && _arrBolgeler.length > 0) {
@@ -99,7 +100,7 @@ function DB_Bolge() {
                     return null;
                 }
             });
-    };
+    }
 
 
     /**
@@ -108,7 +109,7 @@ function DB_Bolge() {
      * @param {integer=} _tahta_id
      * @returns {Promise|{state: (string|string), value: Object}[]}
      */
-    var f_db_bolge_ekle = function (_bolge, _tahta_id) {
+    function f_bolge_ekle(_bolge, _tahta_id) {
 
         /**
          *
@@ -116,13 +117,13 @@ function DB_Bolge() {
          * @param {integer} _tahta_id
          * @returns {*}
          */
-        var f_bolge_ekle = function (_bolge, _tahta_id) {
+        function f_bolge_ekle(_bolge, _tahta_id) {
             //SON EKLENEN bölgenin İD SİNİ ÇEK VE EKLEME İŞLEMİNE BAŞLA
 
             return result.dbQ.sismember(result.kp.bolge.ssetAdlari, _bolge.Adi)
                 .then(function (_iKayitli) {
                     if (_iKayitli == 1) {
-                        return f_db_bolge_bul_adindan(_bolge.Adi);
+                        return f_bolge_bul_adindan(_bolge.Adi);
                     } else {
                         return result.dbQ.incr(result.kp.bolge.idx)
                             .then(function (_id) {
@@ -136,12 +137,12 @@ function DB_Bolge() {
                                         _tahta_id ? result.dbQ.sadd(result.kp.tahta.ssetBolgeleri(_tahta_id, true), _id) : null
                                     ])
                                     .then(function () {
-                                        return f_db_bolge_id(_id);
+                                        return f_bolge_id(_id);
                                     });
                             });
                     }
                 });
-        };
+        }
 
         if (Array.isArray(_bolge) && _bolge.length > 0) {
             return _bolge.mapX(null, f_bolge_ekle, _tahta_id).allX();
@@ -149,9 +150,9 @@ function DB_Bolge() {
         else {
             return f_bolge_ekle(_bolge, _tahta_id);
         }
-    };
+    }
 
-    var f_db_bolge_guncelle = function (_bolge, _tahta_id) {
+    function f_bolge_guncelle(_bolge, _tahta_id) {
         return result.dbQ.sismember(result.kp.bolge.ssetBolgeGenel, _bolge.Id)
             .then(function (_iGenel) {
                 if (_iGenel > 0) {
@@ -160,7 +161,7 @@ function DB_Bolge() {
 
                     return result.dbQ.sadd(result.kp.tahta.ssetBolgeleri(_tahta_id, false), _bolge.Id)
                         .then(function () {
-                            return f_db_bolge_ekle(_bolge, _tahta_id);
+                            return f_bolge_ekle(_bolge, _tahta_id);
                         });
 
                 } else {
@@ -168,14 +169,14 @@ function DB_Bolge() {
 
                     return result.dbQ.hset(result.kp.bolge.tablo, _bolge.Id, JSON.stringify(_bolge))
                         .then(function () {
-                            return f_db_bolge_id(_bolge.Id);
+                            return f_bolge_id(_bolge.Id);
                         });
                 }
             })
 
-    };
+    }
 
-    var f_db_bolge_sil = function (_bolge_id, _tahta_id) {
+    function f_bolge_sil(_bolge_id, _tahta_id) {
 
         if (_bolge_id) {
             return result.dbQ.Q.all([
@@ -186,11 +187,11 @@ function DB_Bolge() {
         } else {
             l.warning("Silinecek aktif bir bölge bulunamadı");
         }
-    };
+    }
     //endregion
 
     //region BÖLGE ŞEHİRLERİ
-    var f_db_bolge_sehirleri = function (_id) {
+    function f_bolge_sehirleri(_id) {
         /** @type {LazyLoadingResponse} */
         var sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
 
@@ -219,7 +220,7 @@ function DB_Bolge() {
             .fail(function () {
                 l.e("bölge şehirleri çekilemedi");
             });
-    };
+    }
 
     /**
      * Bölge ile ilişkili şehir ekleniyor
@@ -228,7 +229,7 @@ function DB_Bolge() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_bolge_sehir_ekle = function (_sehir_idler, _bolge_id, _tahta_id) {
+    function f_bolge_sehir_ekle(_sehir_idler, _bolge_id, _tahta_id) {
         if (Array.isArray(_sehir_idler) && _sehir_idler.length > 0) {
             return _sehir_idler.mapX(null, function (_sehir_id) {
                 return result.dbQ.sadd(result.kp.bolge.ssetSehirleri(_bolge_id), _sehir_id);
@@ -236,7 +237,7 @@ function DB_Bolge() {
         } else {
             return result.dbQ.sadd(result.kp.bolge.ssetSehirleri(_bolge_id), _sehir_idler);
         }
-    };
+    }
 
     /**
      * Bölgeden şehir ilişkisini kaldırıyoruz
@@ -245,9 +246,9 @@ function DB_Bolge() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_bolge_sehir_sil = function (_sehir_id, _bolge_id, _tahta_id) {
+    function f_bolge_sehir_sil(_sehir_id, _bolge_id, _tahta_id) {
         return result.dbQ.srem(result.kp.bolge.ssetSehirleri(_bolge_id), _sehir_id);
-    };
+    }
 
     //endregion
 
@@ -255,14 +256,14 @@ function DB_Bolge() {
      * @class DBBolge
      */
     result = {
-        f_db_bolge_sehir_sil: f_db_bolge_sehir_sil,
-        f_db_bolge_sehir_ekle: f_db_bolge_sehir_ekle,
-        f_db_bolge_tumu: f_db_bolge_tumu,
-        f_db_bolge_id: f_db_bolge_id,
-        f_db_bolge_sehirleri: f_db_bolge_sehirleri,
-        f_db_bolge_ekle: f_db_bolge_ekle,
-        f_db_bolge_guncelle: f_db_bolge_guncelle,
-        f_db_bolge_sil: f_db_bolge_sil
+        f_db_bolge_sehir_sil: f_bolge_sehir_sil,
+        f_db_bolge_sehir_ekle: f_bolge_sehir_ekle,
+        f_db_bolge_tumu: f_bolge_tumu,
+        f_db_bolge_id: f_bolge_id,
+        f_db_bolge_sehirleri: f_bolge_sehirleri,
+        f_db_bolge_ekle: f_bolge_ekle,
+        f_db_bolge_guncelle: f_bolge_guncelle,
+        f_db_bolge_sil: f_bolge_sil
     };
 
     return result;

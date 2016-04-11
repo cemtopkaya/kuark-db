@@ -1,5 +1,7 @@
 'use strict';
 
+var  schema=require('kuark-schema');
+
 /**
  *
  * @returns {DBSehir}
@@ -10,7 +12,7 @@ function DB_Sehir() {
     /** @type {DBSehir} */
     var result = {};
 
-    var f_db_sehir_tumu = function () {
+    function f_sehir_tumu() {
         return result.dbQ.hvals_json_parse(result.kp.sehir.tablo)
             .then(function (_arrSehirler) {
                 /** @type {LazyLoadingResponse} */
@@ -25,28 +27,28 @@ function DB_Sehir() {
                     return sonuc;
                 }
             })
-    };
+    }
 
     /**
      * Şehir bilgilerini döner
      * @param {integer|integer[]|string|string[]} _id
      * @returns {*}
      */
-    var f_db_sehir_id = function (_id) {
+    function f_sehir_id(_id) {
         if (!_id) {
             return null;
         }
         return Array.isArray(_id)
             ? result.dbQ.hmget_json_parse(result.kp.sehir.tablo, _id)
             : result.dbQ.hget_json_parse(result.kp.sehir.tablo, _id);
-    };
+    }
 
     /**
      * Şehir adından şehir objesini buluyoruz
      * @param {string} _sehirAdi
      * @returns {*}
      */
-    var f_db_sehir_bul_adindan = function (_sehirAdi) {
+    function f_sehir_bul_adindan(_sehirAdi) {
         return result.dbQ.hgetall_array(result.kp.sehir.tablo)
             .then(function (_arrSehirler) {
                 if (_arrSehirler && _arrSehirler.length > 0) {
@@ -60,15 +62,15 @@ function DB_Sehir() {
                     return null;
                 }
             });
-    };
+    }
 
     /**
      * sehir:ad setindeki şehir adlarını getirir
      * @returns {*}
      */
-    var f_db_sehir_adlari = function () {
+    function f_sehir_adlari() {
         return result.dbQ.smembers(result.kp.sehir.ssetAdlari);
-    };
+    }
 
     /**
      *
@@ -76,19 +78,19 @@ function DB_Sehir() {
      * @param _tahta_id
      * @returns {Promise|{state: (string|string), value: Object}[]}
      */
-    var f_db_sehir_ekle = function (_sehirler, _tahta_id) {
+    function f_sehir_ekle(_sehirler, _tahta_id) {
         /**
          *
          * @param {Sehir} _sehir
          * @param {integer=} _tahta_id
          * @returns {*}
          */
-        var f_sehir_ekle = function (_sehir, _tahta_id) {
+        function f_sehir_ekle(_sehir, _tahta_id) {
 
             return result.dbQ.sismember(result.kp.sehir.ssetAdlari, _sehir.Adi)
                 .then(function (_iVar) {
                     if (_iVar == 1) {
-                        return f_db_sehir_bul_adindan(_sehir.Adi);
+                        return f_sehir_bul_adindan(_sehir.Adi);
                     } else {
                         return result.dbQ.incr(result.kp.sehir.idx)
                             .then(function (_id) {
@@ -98,12 +100,12 @@ function DB_Sehir() {
                                         result.dbQ.sadd(result.kp.sehir.ssetAdlari, _sehir.Adi)
                                     ])
                                     .then(function () {
-                                        return f_db_sehir_id(_id);
+                                        return f_sehir_id(_id);
                                     })
                             });
                     }
                 });
-        };
+        }
 
         if (Array.isArray(_sehirler) && _sehirler.length > 0) {
             return _sehirler.mapX(null, f_sehir_ekle, _tahta_id).allX();
@@ -111,17 +113,17 @@ function DB_Sehir() {
         } else {
             return f_sehir_ekle(_sehirler, _tahta_id);
         }
-    };
+    }
 
 
     /**
      * @class DBSehir
      */
     result = {
-        f_db_sehir_ekle: f_db_sehir_ekle,
-        f_db_sehir_adlari: f_db_sehir_adlari,
-        f_db_sehir_tumu: f_db_sehir_tumu,
-        f_db_sehir_id: f_db_sehir_id
+        f_db_sehir_ekle: f_sehir_ekle,
+        f_db_sehir_adlari: f_sehir_adlari,
+        f_db_sehir_tumu: f_sehir_tumu,
+        f_db_sehir_id: f_sehir_id
     };
     return result;
 }

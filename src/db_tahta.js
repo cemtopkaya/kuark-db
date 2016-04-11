@@ -33,8 +33,8 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_ihale_takip_tumu(_tahta_id) {
-        return f_db_tahta_ihale_takip_idler(_tahta_id)
+    function f_tahta_ihale_takip_tumu(_tahta_id) {
+        return f_tahta_ihale_takip_idler(_tahta_id)
             .then(function (_ihale_idler) {
                 if (_ihale_idler && _ihale_idler.length > 0) {
                     /** @type {OptionsIhale} */
@@ -57,15 +57,15 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_ihale_takip_idler(_tahta_id) {
+    function f_tahta_ihale_takip_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiIhaleleri(_tahta_id));
     }
 
-    function f_db_tahta_ihale_takip_toplami(_tahta_id) {
+    function f_tahta_ihale_takip_toplami(_tahta_id) {
         var db_ihale = require("./db_ihale");
         return result.dbQ.Q.all([
             db_ihale.f_db_tahta_ihale_idler_aktif(_tahta_id),
-            f_db_tahta_ihale_takip_idler(_tahta_id)
+            f_tahta_ihale_takip_idler(_tahta_id)
 
         ]).then(function (_ress) {
 
@@ -85,14 +85,14 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_ihale_indeksli_idler(_tahta_id) {
+    function f_tahta_ihale_indeksli_idler(_tahta_id) {
         return result.dbQ.exists(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))
             .then(function (_exists) {
                 if (_exists == 1) {
                     return result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id));
 
                 } else {
-                    return f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id)
+                    return f_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id)
                         .then(function () {
                             return result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id));
                         });
@@ -108,8 +108,8 @@ function DB_Tahta() {
      */
     function f_indekslenen_ve_takip_edilen_ihale_idleri(_tahta_id) {
         return result.dbQ.Q.all([
-            f_db_tahta_ihale_indeksli_idler(_tahta_id),
-            f_db_tahta_ihale_takip_idler(_tahta_id)
+            f_tahta_ihale_indeksli_idler(_tahta_id),
+            f_tahta_ihale_takip_idler(_tahta_id)
         ]).then(function (_ress) {
             console.log("indekslenen_ve_takip_edilen_ihale_idleri SONUCU:");
             console.log(JSON.stringify(_ress));
@@ -147,7 +147,7 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_ihale_rapor_bilgileri(_tahta_id, _arama) {
+    function f_tahta_ihale_rapor_bilgileri(_tahta_id, _arama) {
 
 
         /*return f_indekslenen_ve_takip_edilen_kalem_idler(_tahta_id)
@@ -210,14 +210,14 @@ function DB_Tahta() {
      * @param {OptionsIhale=} _opts
      * @returns {Promise} AnahtarKelime[]
      */
-    function f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore(_tahta_id, _opts) {
+    function f_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore(_tahta_id, _opts) {
         var db_ihale = require("./db_ihale");
 
         // anahtalar diyaliz > 1, fx80 > 25, av-set > 145
         // a:1:ihale 101, 102
         // tahta:401:anahtar 1,25,145
         // sdiff (sunion a:1 a:25 a:145 ihale:sirala:tarihe) ihale:silinen
-        return f_db_tahta_ihale_indeksli_idler(_tahta_id)
+        return f_tahta_ihale_indeksli_idler(_tahta_id)
             .then(function (_lstIhaleIdler) {
                 return _lstIhaleIdler.length == 0
                     ? _lstIhaleIdler
@@ -225,13 +225,13 @@ function DB_Tahta() {
             });
     }
 
-    function f_db_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id) {
+    function f_tahta_ihale_indeksli_tahta_anahtar_kelimelerine_gore(_tahta_id) {
         var db_ihale = require('./db_ihale');
         return result.dbQ.exists(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id))
             .then(function (_dbReply) {
                 return _dbReply
                     ? result.dbQ.smembers(result.kp.temp.ssetTahtaAnahtarIhaleleri(_tahta_id)) // Sonuç setini çekelim
-                    : f_db_tahta_anahtar_tumu(_tahta_id)
+                    : f_tahta_anahtar_tumu(_tahta_id)
                     .then(function (_arrKelimeler) {
 
                         if (_arrKelimeler.length == 0) {
@@ -269,9 +269,9 @@ function DB_Tahta() {
      * İndekslenmiş ihalelerin tarihe göre sıralanmış halini temp de tutulması sağlanır
      * @param {integer} _tahta_id
      */
-    function f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id) {
+    function f_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id) {
         console.log("f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali");
-        return f_db_tahta_ihale_indeksli_idler(_tahta_id)
+        return f_tahta_ihale_indeksli_idler(_tahta_id)
             .then(function () {
                 return result.dbQ.exists(result.kp.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore(_tahta_id))
                     .then(function (_iExist) {
@@ -290,7 +290,7 @@ function DB_Tahta() {
      * @param _arama
      * @returns {*}
      */
-    function f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali(_tahta_id, _arama) {
+    function f_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali(_tahta_id, _arama) {
 
         var baslangic = 0,
             bitis = 10,
@@ -304,7 +304,7 @@ function DB_Tahta() {
         var tarih1 = _arama.Tarih.tarih1,
             tarih2 = _arama.Tarih.tarih2;
 
-        return f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
+        return f_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
             .then(function () {
                 return (tarih1 && tarih2
                     ? result.dbQ.zrevrangebyscore(sonucAnahtari, tarih2, tarih1, "LIMIT", baslangic, bitis)
@@ -337,8 +337,8 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {{Toplam: integer, Gecerli: integer, Gecersiz:integer}}
      */
-    function f_db_tahta_ihale_indeksli_toplami(_tahta_id) {
-        return f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
+    function f_tahta_ihale_indeksli_toplami(_tahta_id) {
+        return f_tahta_ihale_indeksli_idler_tarihe_gore_sirali(_tahta_id)
             .then(function () {
                 /**
                  * önce tüm sıralı indekslenen ihale sayısı
@@ -374,8 +374,8 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @param {integer} _ihale_id
      */
-    function f_db_tahta_ihale_gizlenen_tumu(_tahta_id) {
-        return f_db_tahta_ihale_gizlenen_idler(_tahta_id)
+    function f_tahta_ihale_gizlenen_tumu(_tahta_id) {
+        return f_tahta_ihale_gizlenen_idler(_tahta_id)
             .then(function (_ihale_idler) {
                 if (_ihale_idler && _ihale_idler.length > 0) {
                     /** @type {OptionsIhale} */
@@ -399,7 +399,7 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_ihale_gizlenen_toplami(_tahta_id) {
+    function f_tahta_ihale_gizlenen_toplami(_tahta_id) {
         var db_ihale = require("./db_ihale");
         return result.dbQ.exists(result.kp.temp.ssetTahtaIhaleTumu(_tahta_id))
             .then(function (_iExist) {
@@ -409,7 +409,7 @@ function DB_Tahta() {
             })
             .then(function () {
                 return result.dbQ.Q.all([
-                    f_db_tahta_ihale_gizlenen_idler(_tahta_id),
+                    f_tahta_ihale_gizlenen_idler(_tahta_id),
                     result.dbQ.scard(result.kp.temp.ssetTahtaIhaleTumu(_tahta_id))
 
                 ]).then(function (_ress) {
@@ -427,7 +427,7 @@ function DB_Tahta() {
 
     }
 
-    function f_db_tahta_ihale_gizlenen_idler(_tahta_id) {
+    function f_tahta_ihale_gizlenen_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetGizlenenIhaleleri(_tahta_id));
     }
 
@@ -435,15 +435,15 @@ function DB_Tahta() {
     // endregion
 
     // region AJANDA İŞLEMLERİ
-    function f_db_tahta_ajanda_ekle(_tahta_id, _ajanda) {
+    function f_tahta_ajanda_ekle(_tahta_id, _ajanda) {
         return result.dbQ.hset(result.kp.tahta.hsetTahtaAjanda, _tahta_id, JSON.stringify(_ajanda));
     }
 
-    function f_db_tahta_ajanda_sil(_tahta_id) {
+    function f_tahta_ajanda_sil(_tahta_id) {
         return result.dbQ.hdel(result.kp.tahta.hsetTahtaAjanda, _tahta_id);
     }
 
-    function f_db_tahta_ajandasi(_tahta_id) {
+    function f_tahta_ajandasi(_tahta_id) {
         return (Array.isArray(_tahta_id)
             ? result.dbQ.hmget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id)
             : result.dbQ.hget_json_parse(result.kp.tahta.hsetTahtaAjanda, _tahta_id));
@@ -462,7 +462,7 @@ function DB_Tahta() {
      * @param {Integer} _tahta_id
      * @param {{EPosta:String, Roller:Integer[], UID:string}} _yetkisiyleDavetli
      */
-    function f_db_tahta_davet_ekle(_tahta_id, _yetkisiyleDavetli) {
+    function f_tahta_davet_ekle(_tahta_id, _yetkisiyleDavetli) {
         /**
          HASH olacak tahta:3:davet
          key > uid
@@ -479,8 +479,8 @@ function DB_Tahta() {
      * @param {string} _eposta
      * @returns {Promise}
      */
-    function f_db_tahta_davet_eposta(_tahta_id, _davet_id, _eposta) {
-        return f_db_tahta_davet(_tahta_id, _davet_id)
+    function f_tahta_davet_eposta(_tahta_id, _davet_id, _eposta) {
+        return f_tahta_davet(_tahta_id, _davet_id)
             .then(function (_davet) {
                 if (_davet && _davet.EPosta == _eposta) {
                     return _davet;
@@ -496,7 +496,7 @@ function DB_Tahta() {
      * @param _davetId
      * @returns {*}
      */
-    function f_db_tahta_davet(_tahta_id, _davetId) {
+    function f_tahta_davet(_tahta_id, _davetId) {
         return result.dbQ.hget_json_parse(result.kp.tahta.hsDavetler(_tahta_id), _davetId);
     }
 
@@ -505,7 +505,7 @@ function DB_Tahta() {
      * @param _tahta_id
      * @returns {Promise}
      */
-    function f_db_tahta_davetleri(_tahta_id) {
+    function f_tahta_davetleri(_tahta_id) {
         return result.dbQ.hvals_json_parse(result.kp.tahta.hsDavetler(_tahta_id));
     }
 
@@ -518,12 +518,12 @@ function DB_Tahta() {
      * @param {Integer} _tahta_id
      * @param {String} _eposta
      */
-    function f_db_tahta_davet_sil(_tahta_id, _eposta) {
+    function f_tahta_davet_sil(_tahta_id, _eposta) {
         console.log("davet sil e gelenler:");
         console.log("tahta_id:" + _tahta_id);
         console.log("eposta:" + _eposta);
 
-        return f_db_tahta_davetleri(_tahta_id)
+        return f_tahta_davetleri(_tahta_id)
             .then(function (_arrObjectDavetler) {
                 if (_arrObjectDavetler && _arrObjectDavetler.length > 0) {
                     console.log("tüm davetler");
@@ -550,7 +550,7 @@ function DB_Tahta() {
      * @param _rol
      * @returns {Promise}
      */
-    function f_db_tahta_uye_rol_guncelle(_tahta_id, _uye_id, _rol) {
+    function f_tahta_uye_rol_guncelle(_tahta_id, _uye_id, _rol) {
         return result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _uye_id, JSON.stringify(_rol));
     }
 
@@ -562,7 +562,7 @@ function DB_Tahta() {
      * @param {{ Kullanici_Id:Integer, Roller:Integer[] }} _yetkisiyleKullanici
      * @returns {Promise}
      */
-    function f_db_tahta_uye_ekle(_tahta_id, _yetkisiyleKullanici) {
+    function f_tahta_uye_ekle(_tahta_id, _yetkisiyleKullanici) {
         //üye eklenirken kullanıcı:x:tahtalari:uye tablosuna ve tahta:v:uye tablosuna kayıt ekliyoruz
 
         return result.dbQ.Q.all([
@@ -571,11 +571,11 @@ function DB_Tahta() {
         ]);
     }
 
-    function f_db_tahta_uye_guncelle(_tahta_id, _uye_id, _rol) {
+    function f_tahta_uye_guncelle(_tahta_id, _uye_id, _rol) {
         return result.dbQ.hset(result.kp.tahta.hsUyeleri(_tahta_id), _uye_id, JSON.stringify(_rol.Roller));
     }
 
-    function f_db_tahta_uye_sil(_tahta_id, _uye_id) {
+    function f_tahta_uye_sil(_tahta_id, _uye_id) {
         //tahtadan silinmek istenen üye tahtanın sahibi ise silmesine izin vermiyoruz
         //değilse tahtanın üyeleri setinden kaldırıyoruz
         return result.dbQ.sismember(result.kp.kullanici.ssetSahipOlduguTahtalari(_uye_id, true), _tahta_id)
@@ -598,10 +598,10 @@ function DB_Tahta() {
      * @param {OptionsUye=} _opts, Üyelerin hangi bilgilerini istiyoruz
      * @returns {Promise}
      */
-    function f_db_tahta_uyeleri(_tahta_id, _opts) {
+    function f_tahta_uyeleri(_tahta_id, _opts) {
         var db_kullanici = require('./db_kullanici');
 
-        return f_db_aktif_tahta_uye_idleri(_tahta_id)
+        return f_aktif_tahta_uye_idleri(_tahta_id)
             .then(function (_aktifIdleri) {
                 return db_kullanici.f_db_uye_id(_aktifIdleri, _tahta_id, _opts);
             })
@@ -618,8 +618,8 @@ function DB_Tahta() {
      * @param {integer} _rol_id
      * @returns {*}
      */
-    function f_db_tahta_uyeleri_x_rolune_sahip(_tahta_id, _rol_id) {
-        return f_db_tahta_uyeleri(_tahta_id)
+    function f_tahta_uyeleri_x_rolune_sahip(_tahta_id, _rol_id) {
+        return f_tahta_uyeleri(_tahta_id)
             .then(
                 /**
                  * @param {Uye[]} _uyeler
@@ -636,7 +636,7 @@ function DB_Tahta() {
      * @param {Sayfalama=} _sayfalama
      * @returns {Promise}
      */
-    function f_db_aktif_tahta_uye_idleri(_tahta_id, _sayfalama) {
+    function f_aktif_tahta_uye_idleri(_tahta_id, _sayfalama) {
 
         var sonucAnahtari = result.kp.temp.ssetTahtaKullanici(_tahta_id);
         if (_sayfalama) {
@@ -683,7 +683,7 @@ function DB_Tahta() {
      * Sistemdeki tüm tahta nesnelerini lerini döner
      * @returns {*}
      */
-    function f_db_tahta_tumu() {
+    function f_tahta_tumu() {
         return result.dbQ.hvals_json_parse(result.kp.tahta.tablo);
     }
 
@@ -693,7 +693,7 @@ function DB_Tahta() {
      * @param {OptionsTahta=} _opts, Tahtanın hangi bilgilerini istiyorsak seçebiliriz
      * @returns {Promise}
      */
-    function f_db_tahta_id(_tahta_id, _opts) {
+    function f_tahta_id(_tahta_id, _opts) {
 
         /** @type {OptionsTahta} */
         var opts = result.OptionsTahta(_opts);
@@ -730,17 +730,17 @@ function DB_Tahta() {
 
                     arrPromises.push(
                         _optsTahta.bUyeleri
-                            ? f_db_tahta_uyeleri(_tahta.Id, opts ? opts.optUye : {})
+                            ? f_tahta_uyeleri(_tahta.Id, opts ? opts.optUye : {})
                             : []);
 
                     arrPromises.push(
                         _optsTahta.bAnahtarlari
-                            ? f_db_tahta_anahtar_tumu(_tahta.Id)
+                            ? f_tahta_anahtar_tumu(_tahta.Id)
                             : []);
 
                     arrPromises.push(
                         _optsTahta.bAjanda
-                            ? f_db_tahta_ajandasi(_tahta.Id)
+                            ? f_tahta_ajandasi(_tahta.Id)
                             : null);
 
                     // tahtanın :
@@ -771,7 +771,7 @@ function DB_Tahta() {
 
                             //tahtanın ajandalarını topluca çekiyoruz
                             var tahta_idler = _dbTahtaBilgileri.pluckX("Genel.Id");
-                            return f_db_tahta_ajandasi(tahta_idler)
+                            return f_tahta_ajandasi(tahta_idler)
                                 .then(function (_dbAjandaBilgileri) {
                                     if (!_dbAjandaBilgileri) {
                                         return _dbTahtaBilgileri;
@@ -800,7 +800,7 @@ function DB_Tahta() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    function f_db_tahtadan_ayril(_tahta_id, _kul_id) {
+    function f_tahtadan_ayril(_tahta_id, _kul_id) {
 
         return result.dbQ.Q.all([
             result.dbQ.srem(result.kp.kullanici.ssetUyeOlduguTahtalari(_kul_id, true), _tahta_id),
@@ -822,7 +822,7 @@ function DB_Tahta() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    function f_db_tahta_ekle(_tahta_db, _kul_id) {
+    function f_tahta_ekle(_tahta_db, _kul_id) {
 
         if (!_kul_id) {
             throw new exception.Istisna("Kullanıcı bilgisi eksik", "Tahtayı ekleyen kullanıcı bilgisi bulunamadı!");
@@ -851,7 +851,7 @@ function DB_Tahta() {
                 var arr_tahta_rol_idler = _arrDbReplies[0].mapX(null, parseInt);
 
                 var son = roller.concat(arr_tahta_rol_idler);
-                return f_db_tahta_uye_rol_guncelle(_tahta_id, _kul_id, son)
+                return f_tahta_uye_rol_guncelle(_tahta_id, _kul_id, son)
             });
         };
 
@@ -887,7 +887,7 @@ function DB_Tahta() {
                     })
                     .then(function () {
                         l.info("HERŞEY BİTTİ TAHTA ID DEN DÖN");
-                        return f_db_tahta_id(_id)//4
+                        return f_tahta_id(_id)//4
                             .then(function (_dbTahta) {
                                 emitter.emit(schema.SABIT.OLAY.TAHTA_EKLENDI, _dbTahta, _kul_id);
                                 return _dbTahta;
@@ -908,12 +908,12 @@ function DB_Tahta() {
      * @param _kul_id
      * @returns {*}
      */
-    function f_db_tahta_guncelle(_tahta_db, _kul_id) {
+    function f_tahta_guncelle(_tahta_db, _kul_id) {
         delete _tahta_db.Kurum;
         l.info("f_db_tahta_guncelle");
         return result.dbQ.hset(result.kp.tahta.tablo, _tahta_db.Id, JSON.stringify(_tahta_db))
             .then(function () {
-                return f_db_tahta_id(_tahta_db.Id)
+                return f_tahta_id(_tahta_db.Id)
                     .then(function (_dbTahta) {
                         emitter.emit(schema.SABIT.OLAY.TAHTA_GUNCELLENDI, _dbTahta, _kul_id);
                         return _dbTahta;
@@ -931,10 +931,10 @@ function DB_Tahta() {
      * @param {integer} _kul_id
      * @returns {*}
      */
-    function f_db_tahta_sil(_tahta_id, _kul_id) {
+    function f_tahta_sil(_tahta_id, _kul_id) {
 
         //_tahta_id nin _kul_id ye ait olması halinde gelmesi gerekiyor. tahta silme sahip olunan tahtalarda geçerlidir.
-        return f_db_tahta_id(_tahta_id)
+        return f_tahta_id(_tahta_id)
             .then(function (_tahta) {
                 //loglara ekle
                 //result.f_db_log_ekle(result.kp.tahta.tablo, _tahta, true, _kul_id);
@@ -979,7 +979,7 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_teklif_idleri(_tahta_id) {
+    function f_tahta_teklif_idleri(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTeklifleri(_tahta_id, true));
     }
 
@@ -989,7 +989,7 @@ function DB_Tahta() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_kurum_idleri(_tahta_id) {
+    function f_tahta_kurum_idleri(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetOzelKurumlari(_tahta_id, true));
     }
 
@@ -1003,7 +1003,7 @@ function DB_Tahta() {
      * [{Id:1,AnahtarKelime:'diyalizer'}]
      * @returns {*}
      */
-    function f_db_tahta_anahtar_tumu(_tahta_id) {
+    function f_tahta_anahtar_tumu(_tahta_id) {
 
         //tahtanın anahtar kelimelerini döner
         return result.dbQ.zrangebyscore([result.kp.tahta.zsetAnahtarKelimeleri(_tahta_id), '-inf', '+inf'])
@@ -1033,7 +1033,7 @@ function DB_Tahta() {
      * @param {integer=} _kul_id
      * @returns {Promise}
      */
-    function f_db_tahta_anahtar_ekle(_tahta_id, _anahtar, _kul_id) {
+    function f_tahta_anahtar_ekle(_tahta_id, _anahtar, _kul_id) {
 
         return result.f_db_anahtar_ekle(_anahtar.Anahtar)
             .then(
@@ -1053,7 +1053,7 @@ function DB_Tahta() {
                 });
     }
 
-    function f_db_tahta_anahtar_sil(_tahta_id, _anahtar_id, _kul_id) {
+    function f_tahta_anahtar_sil(_tahta_id, _anahtar_id, _kul_id) {
 
         return result.f_db_anahtar_val(_anahtar_id)
             .then(
@@ -1080,51 +1080,51 @@ function DB_Tahta() {
      * @property {OptionsTahta} OptionsTahta
      */
     result = {
-        f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali: f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali,
-        f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali: f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali,
-        f_db_tahta_ihale_indeksli_toplami: f_db_tahta_ihale_indeksli_toplami,
-        f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore: f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore,
-        f_db_tahta_ihale_indeksli_idler: f_db_tahta_ihale_indeksli_idler,
-        f_db_tahta_ihale_gizlenen_idler: f_db_tahta_ihale_gizlenen_idler,
-        f_db_tahta_ihale_gizlenen_toplami: f_db_tahta_ihale_gizlenen_toplami,
-        f_db_tahta_ihale_gizlenen_tumu: f_db_tahta_ihale_gizlenen_tumu,
-        f_db_tahta_ihale_takip_toplami: f_db_tahta_ihale_takip_toplami,
-        f_db_tahta_ihale_rapor_bilgileri: f_db_tahta_ihale_rapor_bilgileri,
+        f_db_tahta_ihale_indeksli_idler_tarihe_gore_sirali: f_tahta_ihale_indeksli_idler_tarihe_gore_sirali,
+        f_db_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali: f_tahta_ihale_indeksli_ihaleler_tarihe_gore_sirali,
+        f_db_tahta_ihale_indeksli_toplami: f_tahta_ihale_indeksli_toplami,
+        f_db_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore: f_tahta_ihale_indeksli_tahta_anahtarKelimelerineGore,
+        f_db_tahta_ihale_indeksli_idler: f_tahta_ihale_indeksli_idler,
+        f_db_tahta_ihale_gizlenen_idler: f_tahta_ihale_gizlenen_idler,
+        f_db_tahta_ihale_gizlenen_toplami: f_tahta_ihale_gizlenen_toplami,
+        f_db_tahta_ihale_gizlenen_tumu: f_tahta_ihale_gizlenen_tumu,
+        f_db_tahta_ihale_takip_toplami: f_tahta_ihale_takip_toplami,
+        f_db_tahta_ihale_rapor_bilgileri: f_tahta_ihale_rapor_bilgileri,
         f_indekslenen_ve_takip_edilen_ihale_idleri: f_indekslenen_ve_takip_edilen_ihale_idleri,
-        f_db_tahta_ihale_takip_idler: f_db_tahta_ihale_takip_idler,
-        f_db_tahta_ihale_takip_tumu: f_db_tahta_ihale_takip_tumu,
-        f_db_tahta_ajanda_ekle: f_db_tahta_ajanda_ekle,
-        f_db_tahta_ajanda_sil: f_db_tahta_ajanda_sil,
-        f_db_tahta_ajandasi: f_db_tahta_ajandasi,
-        f_db_tahta_uyeleri_x_rolune_sahip: f_db_tahta_uyeleri_x_rolune_sahip,
-        f_db_aktif_tahta_uye_idleri: f_db_aktif_tahta_uye_idleri,
-        f_db_tahta_kurum_idleri: f_db_tahta_kurum_idleri,
-        f_db_tahta_teklif_idleri: f_db_tahta_teklif_idleri,
+        f_db_tahta_ihale_takip_idler: f_tahta_ihale_takip_idler,
+        f_db_tahta_ihale_takip_tumu: f_tahta_ihale_takip_tumu,
+        f_db_tahta_ajanda_ekle: f_tahta_ajanda_ekle,
+        f_db_tahta_ajanda_sil: f_tahta_ajanda_sil,
+        f_db_tahta_ajandasi: f_tahta_ajandasi,
+        f_db_tahta_uyeleri_x_rolune_sahip: f_tahta_uyeleri_x_rolune_sahip,
+        f_db_aktif_tahta_uye_idleri: f_aktif_tahta_uye_idleri,
+        f_db_tahta_kurum_idleri: f_tahta_kurum_idleri,
+        f_db_tahta_teklif_idleri: f_tahta_teklif_idleri,
         // Tahtanın temel işlemleri
-        f_db_tahta_tumu: f_db_tahta_tumu,
-        f_db_tahta_id: f_db_tahta_id,
-        f_db_tahtadan_ayril: f_db_tahtadan_ayril,
-        f_db_tahta_ekle: f_db_tahta_ekle,
-        f_db_tahta_guncelle: f_db_tahta_guncelle,
-        f_db_tahta_sil: f_db_tahta_sil,
+        f_db_tahta_tumu: f_tahta_tumu,
+        f_db_tahta_id: f_tahta_id,
+        f_db_tahtadan_ayril: f_tahtadan_ayril,
+        f_db_tahta_ekle: f_tahta_ekle,
+        f_db_tahta_guncelle: f_tahta_guncelle,
+        f_db_tahta_sil: f_tahta_sil,
         // Anahtar işlemleri
-        f_db_tahta_anahtar_tumu: f_db_tahta_anahtar_tumu,
-        f_db_tahta_anahtar_ekle: f_db_tahta_anahtar_ekle,
-        f_db_tahta_anahtar_sil: f_db_tahta_anahtar_sil,
+        f_db_tahta_anahtar_tumu: f_tahta_anahtar_tumu,
+        f_db_tahta_anahtar_ekle: f_tahta_anahtar_ekle,
+        f_db_tahta_anahtar_sil: f_tahta_anahtar_sil,
         // Davetli ve Kullanıcı işlemleri
-        f_db_tahta_davet: f_db_tahta_davet,
-        f_db_tahta_davetleri: f_db_tahta_davetleri,
-        f_db_tahta_davet_ekle: f_db_tahta_davet_ekle,
-        f_db_tahta_davet_sil: f_db_tahta_davet_sil,
-        f_db_tahta_davet_eposta: f_db_tahta_davet_eposta,
-        f_db_tahta_uye_ekle: f_db_tahta_uye_ekle,
-        f_db_tahta_uye_guncelle: f_db_tahta_uye_guncelle,
-        f_db_tahta_uye_sil: f_db_tahta_uye_sil,
-        f_db_tahta_uyeleri: f_db_tahta_uyeleri,
-        f_db_tahta_uye_rol_guncelle: f_db_tahta_uye_rol_guncelle,
+        f_db_tahta_davet: f_tahta_davet,
+        f_db_tahta_davetleri: f_tahta_davetleri,
+        f_db_tahta_davet_ekle: f_tahta_davet_ekle,
+        f_db_tahta_davet_sil: f_tahta_davet_sil,
+        f_db_tahta_davet_eposta: f_tahta_davet_eposta,
+        f_db_tahta_uye_ekle: f_tahta_uye_ekle,
+        f_db_tahta_uye_guncelle: f_tahta_uye_guncelle,
+        f_db_tahta_uye_sil: f_tahta_uye_sil,
+        f_db_tahta_uyeleri: f_tahta_uyeleri,
+        f_db_tahta_uye_rol_guncelle: f_tahta_uye_rol_guncelle,
         // Tahta rol işlemleri
-        //f_db_tahta_rol_ekle: f_db_tahta_rol_ekle,
-        //f_db_tahta_rol_sil: f_db_tahta_rol_sil
+        //f_db_tahta_rol_ekle: f_tahta_rol_ekle,
+        //f_db_tahta_rol_sil: f_tahta_rol_sil
         /**
          *
          * @param opt - Ezilecek değerleri taşıyan nesne

@@ -15,7 +15,7 @@ var extension = require('kuark-extensions'),
  * @param result
  * @returns {{yetki: {idx: string, tablo: string}, rol: {idx: string, tablo: string}, kullanici: {idx: string, tablo: string, ssetGenel: string, ssetSilinen: string, hsetLocalKullanicilari: string, hsetADKullanicilari: string, hsetFacebookKullanicilari: string, hsetTwitterKullanicilari: string, hsetGCTokens: string, hsetGPlusKullanicilari: string, hsetKullaniciProfilleri: string, hsetKullaniciOturumDurumlari: string, ssetBolgeleri: KeyPrefix.kullanici.ssetBolgeleri, ssetYetkileri: KeyPrefix.kullanici.ssetYetkileri, zsetHaberAkisi: KeyPrefix.kullanici.zsetHaberAkisi, hsetHaberDetaylari: KeyPrefix.kullanici.hsetHaberDetaylari, zsetDikkat: KeyPrefix.kullanici.zsetDikkat, zsetGorev: KeyPrefix.kullanici.zsetGorev, zsetSms: KeyPrefix.kullanici.zsetSms, zsetIleti: KeyPrefix.kullanici.zsetIleti, ssetSahipOlduguTahtalari: KeyPrefix.kullanici.ssetSahipOlduguTahtalari, ssetUyeOlduguTahtalari: KeyPrefix.kullanici.ssetUyeOlduguTahtalari}, anahtar: {idx: string, tablo: string, ssetIndexIhale: KeyPrefix.anahtar.ssetIndexIhale, ssetIndexKalem: KeyPrefix.anahtar.ssetIndexKalem, ssetIndexUrun: KeyPrefix.anahtar.ssetIndexUrun}, bolge: {idx: string, tablo: string, ssetAdlari: string, ssetSehirleri: KeyPrefix.bolge.ssetSehirleri}, ihale: {idx: string, tablo: string, ssetIhaleUsulAdlari: string, ssetGenel: string, ssetSilinen: string, hsetIhale_ihaleDunyasiId: string, zsetSaglikbank: string, zsetEkap: string, zsetIhaleMerkezi: string, ssetIhaleMerkezi: string, hsetYapanKurumlari: string, ssetKalemleri: KeyPrefix.ihale.ssetKalemleri, zsetYapilmaTarihi: string, zsetSistemeEklenmeTarihi: string, ssetTeklifleri: KeyPrefix.ihale.ssetTeklifleri, ihaleDunyasi: {idx: string, tablo: string}, ssetUrunleri: KeyPrefix.ihale.ssetUrunleri}, kurum: {idx: string, tablo: string, ssetGenel: string, ssetKurum_id: string, ssetSilinen: string, hsetKurum_ihaleDunyasiId: string, ssetAdlari: string, ssetUrunleri: KeyPrefix.kurum.ssetUrunleri, ssetIhaleleri: KeyPrefix.kurum.ssetIhaleleri, ssetTeklifleri: KeyPrefix.kurum.ssetTeklifleri}, doviz: {zsetKurlari: KeyPrefix.doviz.zsetKurlari, idx: string}, urun: {idx: string, tablo: string, ssetIhaleleri: KeyPrefix.urun.ssetIhaleleri, ssetKalemleri: KeyPrefix.urun.ssetKalemleri, ssetKurumlari: KeyPrefix.urun.ssetKurumlari, ssetTeklifleri: KeyPrefix.urun.ssetTeklifleri, zsetAnahtarKelimeleri: KeyPrefix.urun.zsetAnahtarKelimeleri, hsetUreticiler: string}, ulke: {idx: string, tablo: string, ssetAdlari: string}, sehir: {idx: string, tablo: string, ssetAdlari: string}, kalem: {idx: string, tablo: string, ssetGenel: string, ssetTeklifleri: KeyPrefix.kalem.ssetTeklifleri, ssetOnayDurumlari: KeyPrefix.kalem.ssetOnayDurumlari, hsetIhaleleri: string}, teklif: {idx: string, tablo: string, hsetKurumlari: string, hsetKalemleri: string, hsetUrunleri: string, zsetTeklifYapilmaTarihi: string, ssetTeklifParaBirimli: KeyPrefix.teklif.ssetTeklifParaBirimli, ssetTeklifOnayDurumlari: KeyPrefix.teklif.ssetTeklifOnayDurumlari}, olay: {tablo: string, idx: string}, uyari: {idx: string, idxUyariSonuc: string, tablo: string, ssetTetiklenecekOlay: string, ssetPasif: string, hsetUyariSonuclari: string, zsetGorevDetay: KeyPrefix.uyari.zsetGorevDetay}, gerceklesen_olay_kuyrugu: {idx: string, tablo: string}, tahta: {idx: string, tablo: string, ssetSilinen: string, zsetHaberAkisi: KeyPrefix.tahta.zsetHaberAkisi, hsetHaberDetaylari: KeyPrefix.tahta.hsetHaberDetaylari, hsetKalemOnayDurumlari: KeyPrefix.tahta.hsetKalemOnayDurumlari, ssetOzelTahtaRolleri: KeyPrefix.tahta.ssetOzelTahtaRolleri, hsDavetler: KeyPrefix.tahta.hsDavetler, hsUyeleri: KeyPrefix.tahta.hsUyeleri, ssetTakiptekiIhaleleri: KeyPrefix.tahta.ssetTakiptekiIhaleleri, ssetUyarilari: KeyPrefix.tahta.ssetUyarilari, ssetGizlenenIhaleleri: KeyPrefix.tahta.ssetGizlenenIhaleleri, ssetGizlenenKalemleri: KeyPrefix.tahta.ssetGizlenenKalemleri, ssetGizlenenKurumlari: KeyPrefix.tahta.ssetGizlenenKurumlari, ssetEzilenIhaleleri: KeyPrefix.tahta.ssetEzilenIhaleleri, ssetEzilenKalemleri: KeyPrefix.tahta.ssetEzilenKalemleri, ssetEzilenKurumlari: KeyPrefix.tahta.ssetEzilenKurumlari, zsetAnahtarKelimeleri: KeyPrefix.tahta.zsetAnahtarKelimeleri, ssetTeklifleri: KeyPrefix.tahta.ssetTeklifleri, ssetTeklifVerilenIhaleler: KeyPrefix.tahta.ssetTeklifVerilenIhaleler, ssetOzelIhaleleri: KeyPrefix.tahta.ssetOzelIhaleleri, ssetOzelKalemleri: KeyPrefix.tahta.ssetOzelKalemleri, ssetOzelKurumlari: KeyPrefix.tahta.ssetOzelKurumlari, ssetOzelUrunleri: KeyPrefix.tahta.ssetOzelUrunleri}, temp: {zsetKullaniciDikkatTumu: KeyPrefix.temp.zsetKullaniciDikkatTumu, zsetKullaniciGorevTumu: KeyPrefix.temp.zsetKullaniciGorevTumu, ssetTahtaAnahtarIhaleleri: KeyPrefix.temp.ssetTahtaAnahtarIhaleleri, ssetTahtaIhaleTumu: KeyPrefix.temp.ssetTahtaIhaleTumu, ssetTahtaIhaleIstenmeyen: KeyPrefix.temp.ssetTahtaIhaleIstenmeyen, ssetTahtaIhale: KeyPrefix.temp.ssetTahtaIhale, ssetTahtaKalem: KeyPrefix.temp.ssetTahtaKalem, ssetTahtaKalemTumu: KeyPrefix.temp.ssetTahtaKalemTumu, ssetTahtaKalemIstenmeyen: KeyPrefix.temp.ssetTahtaKalemIstenmeyen, zsetTahtaIhaleTarihineGore: KeyPrefix.temp.zsetTahtaIhaleTarihineGore, zsetTahtaIhaleSiraliIhaleTarihineGore: KeyPrefix.temp.zsetTahtaIhaleSiraliIhaleTarihineGore, zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore: KeyPrefix.temp.zsetTahtaAnahtaraGoreSiraliIhaleTarihineGore, ssetKurum: string, ssetTahtaKurumTumu: KeyPrefix.temp.ssetTahtaKurumTumu, ssetTahtaKurumIstenmeyen: KeyPrefix.temp.ssetTahtaKurumIstenmeyen, ssetTahtaKurum: KeyPrefix.temp.ssetTahtaKurum, ssetTahtaIhaleTeklifleri: KeyPrefix.temp.ssetTahtaIhaleTeklifleri, ssetTahtaKalemTeklifleri: KeyPrefix.temp.ssetTahtaKalemTeklifleri, ssetTahtaUrun: KeyPrefix.temp.ssetTahtaUrun, ssetTahtaKullanici: KeyPrefix.temp.ssetTahtaKullanici, ssetKullanici: string, ssetTahtaKurumTeklifleri: KeyPrefix.temp.ssetTahtaKurumTeklifleri, zsetKurumTeklifleriParaBirimli: KeyPrefix.temp.zsetKurumTeklifleriParaBirimli, zsetKurumTeklifleriOnayDurumunaGore: KeyPrefix.temp.zsetKurumTeklifleriOnayDurumunaGore, zsetUrunTeklifleriParaBirimli: KeyPrefix.temp.zsetUrunTeklifleriParaBirimli, zsetUrunTeklifleriOnayDurumunaGore: KeyPrefix.temp.zsetUrunTeklifleriOnayDurumunaGore}, yorum: {idx: string, tablo: string, ssetSilinen: string}}}
  */
-var f_keyPrefixes = function (result) {
+function f_keyPrefixes(result) {
 
     var TAHTA = 'tahta',
         ROL = 'rol',
@@ -639,7 +639,7 @@ var f_keyPrefixes = function (result) {
     };
 
     return keyPrefixes;
-};
+}
 
 
 /**
@@ -664,7 +664,7 @@ function REDIS(_dbNo) {
         dbQ = {};
 
 
-    var f_initRedisClient = function () {
+    function f_initRedisClient() {
         /**
          * redis client tek yerde oluşturuyoruz
          */
@@ -698,7 +698,7 @@ function REDIS(_dbNo) {
             if (err) return err;
             console.info(dbNo + " No'lu DB seçildi...\n")
         });
-    };
+    }
 
     function f_init_sabitler() {
         var c = redisClient;
@@ -845,7 +845,7 @@ function REDIS(_dbNo) {
         f_initRedisClient();
         dbQ = f_init_sabitler();
         keyPrefixes = f_keyPrefixes(result);
-    };
+    }
     init();
 
     /**

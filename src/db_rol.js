@@ -23,9 +23,9 @@ function DB_Rol() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_rol_bolgesi_ekle = function (_rol_id, _bolge_id, _tahta_id) {
+    function f_rol_bolgesi_ekle(_rol_id, _bolge_id, _tahta_id) {
         return result.dbQ.sadd(result.kp.rol.ssetBolgeleri(_rol_id), _bolge_id);
-    };
+    }
 
     /**
      * Rol bölge ilişkisini kaldır
@@ -34,9 +34,9 @@ function DB_Rol() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_rol_bolgesi_sil = function (_rol_id, _bolge_id, _tahta_id) {
+    function f_rol_bolgesi_sil(_rol_id, _bolge_id, _tahta_id) {
         return result.dbQ.srem(result.kp.rol.ssetBolgeleri(_rol_id), _bolge_id);
-    };
+    }
 
     /**
      * Role bağlı bölgeleri getirir
@@ -44,7 +44,7 @@ function DB_Rol() {
      * @param _tahta_id
      * @returns {*}
      */
-    var f_db_rol_bolgeleri_tumu = function (_rol_id, _tahta_id) {
+    function f_rol_bolgeleri_tumu(_rol_id, _tahta_id) {
 
         return result.dbQ.smembers(result.kp.rol.ssetBolgeleri(_rol_id))
             .then(function (_bolge_idler) {
@@ -55,25 +55,25 @@ function DB_Rol() {
                     return null;
                 }
             });
-    };
+    }
 
     //endregion
 
     //region ROLLER
-    var f_db_rol_tumu = function (_tahta_id) {
+    function f_rol_tumu(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetOzelTahtaRolleri(_tahta_id, true))
             .then(function (_rol_idler) {
-                return f_db_rol_id(_rol_idler);
+                return f_rol_id(_rol_idler);
             });
-    };
+    }
     //endregion
 
     //region ROL_İD
-    var f_db_rol_id = function (_id) {
+    function f_rol_id(_id) {
         return Array.isArray(_id)
             ? result.dbQ.hmget_json_parse(result.kp.rol.tablo, _id)
             : result.dbQ.hget_json_parse(result.kp.rol.tablo, _id);
-    };
+    }
 
     //endregion
 
@@ -84,7 +84,7 @@ function DB_Rol() {
      * @param {integer} _tahta_id
      * @returns {Promise}
      */
-    var f_db_rol_ekle = function (_rol, _tahta_id) {
+    function f_rol_ekle(_rol, _tahta_id) {
 
         if (Array.isArray(_rol) && _rol.length > 0) {
             return _rol.mapX(null, f_rol_ekle, _tahta_id).allX();
@@ -92,7 +92,7 @@ function DB_Rol() {
         else {
             return f_rol_ekle(_rol, _tahta_id);
         }
-    };
+    }
 
     /**
      * Rol objesini ROL tablosuna yeni bir ID ile ekler,
@@ -101,7 +101,7 @@ function DB_Rol() {
      * @param {integer} _tahta_id
      * @returns {Promise}
      */
-    var f_rol_ekle = function (_rol, _tahta_id) {
+    function f_rol_ekle(_rol, _tahta_id) {
 
         return result.dbQ.incr(result.kp.rol.idx)
             .then(function (_id) {
@@ -112,17 +112,17 @@ function DB_Rol() {
                     result.dbQ.hset(result.kp.rol.tablo, _id, JSON.stringify(_rol)),// 1
                     result.dbQ.sadd(result.kp.tahta.ssetOzelTahtaRolleri(_tahta_id, true), _rol.Id) // 2
                 ]).then(function () {
-                    return f_db_rol_id(_rol.Id);
+                    return f_ol_id(_rol.Id);
                 });
             });
-    };
+    }
 
-    var f_db_rol_guncelle = function (_tahta_id, _rol, _kul_id) {
+    function f_rol_guncelle(_tahta_id, _rol, _kul_id) {
         return result.dbQ.hset(result.kp.rol.tablo, _rol.Id, JSON.stringify(_rol))
             .then(function () {
-                return f_db_rol_id(_rol.Id);
+                return f_rol_id(_rol.Id);
             });
-    };
+    }
 
     /**
      * Bu _kul_id kullanıcısından _tahta_id tahtasında _rol_id rolünü siler
@@ -131,7 +131,7 @@ function DB_Rol() {
      * @param {integer} _rol_id
      * @returns {Promise}
      */
-    var f_db_rol_sil_kullanici = function (_kul_id, _tahta_id, _rol_id) {
+    function f_rol_sil_kullanici(_kul_id, _tahta_id, _rol_id) {
         if (_rol_id) {
             return result.dbQ.hget_json_parse(result.kp.tahta.hsUyeleri(_tahta_id), _kul_id)
                 .then(function (_arrUyeRolId) {
@@ -150,7 +150,7 @@ function DB_Rol() {
         } else {
             l.warning("Silinecek aktif bir rol bulunamadı");
         }
-    };
+    }
 
     /**
      * Tahtadan rol_id yi çıkaracak
@@ -159,14 +159,14 @@ function DB_Rol() {
      * @param {integer[]=} _arrKul_id
      * @returns {{state: (string|string), value: Object}[]}
      */
-    var f_db_rol_sil_tahta = function (_tahta_id, _rol_id, _arrKul_id) {
+    function f_rol_sil_tahta(_tahta_id, _rol_id, _arrKul_id) {
 
         // 1. Tahtanın üye id lerini Array mi diye kontrol et
         // 2. üye id lerinden rolü çıkar
         // 3. tahta id den bu rolü sil
         if (_rol_id) {
             var arrPromises = Array.isArray(_arrKul_id) //1
-                ? _arrKul_id.mapX(null, f_db_rol_sil_kullanici, _tahta_id, _rol_id) // 2
+                ? _arrKul_id.mapX(null, f_rol_sil_kullanici, _tahta_id, _rol_id) // 2
                 : [];
             //3
 
@@ -181,7 +181,7 @@ function DB_Rol() {
             console.error("Silinecek aktif bir rol bulunamadı");
             throw "Silinecek aktif bir rol bulunamadı";
         }
-    };
+    }
 
     /**
      * Tüm rollerin silinmesi sağlanır.
@@ -189,16 +189,16 @@ function DB_Rol() {
      * @param {int} _kul_id
      * @returns {*}
      */
-    var f_db_rol_sil_tumu = function (_tahta_id, _kul_id) {
+    function f_rol_sil_tumu(_tahta_id, _kul_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetOzelTahtaRolleri(_tahta_id, true))
             .then(function (_rol_idler) {
                 if (_rol_idler && _rol_idler.length > 0) {
                     return _rol_idler.map(function (_id) {
-                        return f_db_rol_sil_tahta(_tahta_id, _id, _kul_id);
+                        return f_rol_sil_tahta(_tahta_id, _id, _kul_id);
                     });
                 }
             });
-    };
+    }
 
     //endregion
 
@@ -206,16 +206,16 @@ function DB_Rol() {
      * @class DBRol
      */
     result = {
-        f_db_rol_bolgesi_ekle: f_db_rol_bolgesi_ekle,
-        f_db_rol_bolgesi_sil: f_db_rol_bolgesi_sil,
-        f_db_rol_bolgeleri_tumu: f_db_rol_bolgeleri_tumu,
-        f_db_rol_sil_tumu: f_db_rol_sil_tumu,
-        f_db_rol_sil_tahta: f_db_rol_sil_tahta,
-        f_db_rol_sil_kullanici: f_db_rol_sil_kullanici,
-        f_db_rol_guncelle: f_db_rol_guncelle,
-        f_db_rol_ekle: f_db_rol_ekle,
-        f_db_rol_id: f_db_rol_id,
-        f_db_rol_tumu: f_db_rol_tumu
+        f_db_rol_bolgesi_ekle: f_rol_bolgesi_ekle,
+        f_db_rol_bolgesi_sil: f_rol_bolgesi_sil,
+        f_db_rol_bolgeleri_tumu: f_rol_bolgeleri_tumu,
+        f_db_rol_sil_tumu: f_rol_sil_tumu,
+        f_db_rol_sil_tahta: f_rol_sil_tahta,
+        f_db_rol_sil_kullanici: f_rol_sil_kullanici,
+        f_db_rol_guncelle: f_rol_guncelle,
+        f_db_rol_ekle: f_rol_ekle,
+        f_db_rol_id: f_rol_id,
+        f_db_rol_tumu: f_rol_tumu
     };
 
     return result;

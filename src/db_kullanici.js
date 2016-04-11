@@ -50,15 +50,15 @@ function DB_Kullanici() {
     var result = {};
 
     //region PROFİL BİLGİLERİ
-    function f_db_kullanici_profil(kul_id) {
+    function f_kullanici_profil(kul_id) {
         return result.dbQ.hget_json_parse(result.kp.kullanici.hsetKullaniciProfilleri, kul_id);
     }
 
-    function f_db_kullanici_profil_ekle(kul_id, profil) {
+    function f_kullanici_profil_ekle(kul_id, profil) {
 
         return result.dbQ.hset(result.kp.kullanici.hsetKullaniciProfilleri, kul_id, JSON.stringify(profil))
             .then(function () {
-                return f_db_kullanici_profil(kul_id);
+                return f_kullanici_profil(kul_id);
             });
     }
 
@@ -68,7 +68,7 @@ function DB_Kullanici() {
      * @param {int} _durum_id
      * @returns {*}
      */
-    function f_db_kullanici_oturum_durumu(_kul_id) {
+    function f_kullanici_oturum_durumu(_kul_id) {
         return result.dbQ.hget(result.kp.kullanici.hsetKullaniciOturumDurumlari, _kul_id);
     }
 
@@ -78,7 +78,7 @@ function DB_Kullanici() {
      * @param {int} _durum_id
      * @returns {*}
      */
-    function f_db_kullanici_oturum_durumu_ekle(_kul_id, _durum_id) {
+    function f_kullanici_oturum_durumu_ekle(_kul_id, _durum_id) {
         return result.dbQ.hset(result.kp.kullanici.hsetKullaniciOturumDurumlari, _kul_id, _durum_id);
     }
 
@@ -90,7 +90,7 @@ function DB_Kullanici() {
      * @param kul_id
      * @returns {*}
      */
-    function f_db_kullanici_tahta_idleri(kul_id) {
+    function f_kullanici_tahta_idleri(kul_id) {
         // 1. + Kullanıcının sahip oldukları
         // 2. + Kullanıcının üyesi olduğu tahta id leri
         // 3. - Kullanıcının sildikleri
@@ -118,9 +118,9 @@ function DB_Kullanici() {
      * @param {OptionsTahta=} _opts
      * @returns {Promise}
      */
-    function f_db_kullanici_tahtalari(_kul_id, _opts) {
+    function f_kullanici_tahtalari(_kul_id, _opts) {
 
-        return f_db_kullanici_tahta_idleri(_kul_id)
+        return f_kullanici_tahta_idleri(_kul_id)
             .then(function (_dbArrTahtaId) {
                 //console.log = "Oncesi _dbArrTahtaId": _dbArrTahtaId;
                 var db_tahta = require('./db_tahta');
@@ -136,15 +136,15 @@ function DB_Kullanici() {
      * @param kul_id
      * @returns {*}
      */
-    function f_db_kullanici_bolge_tumu(kul_id) {
+    function f_kullanici_bolge_tumu(kul_id) {
         return result.dbQ.smembers(result.kp.kullanici.ssetBolgeleri(kul_id));
     }
 
-    function f_db_kullanici_bolge_ekle(kul_id, bolge) {
+    function f_kullanici_bolge_ekle(kul_id, bolge) {
         return result.dbQ.sadd(result.kp.kullanici.ssetBolgeleri(kul_id), bolge.Id)
     }
 
-    function f_db_kullanici_bolge_sil(kul_id, bolge_id) {
+    function f_kullanici_bolge_sil(kul_id, bolge_id) {
         return result.dbQ.srem(result.kp.kullanici.ssetBolgeleri(kul_id), bolge_id);
     }
 
@@ -156,7 +156,7 @@ function DB_Kullanici() {
      * @param kul_id
      * @returns {*}
      */
-    function f_db_kullanici_yetki_tumu(kul_id) {
+    function f_kullanici_yetki_tumu(kul_id) {
         return result.dbQ.smembers(result.kp.kullanici.ssetYetkileri(kul_id))
             .then(function (_aktif) {
                 return result.dbQ.hmget_json_parse(result.kp.yetki.tablo, _aktif);
@@ -165,7 +165,7 @@ function DB_Kullanici() {
             });
     }
 
-    function f_db_kullanici_yetki_ekle(kul_id, _yetki) {
+    function f_kullanici_yetki_ekle(kul_id, _yetki) {
         return result.dbQ.incr(result.kp.yetki.idx)
             .then(function (_id) {
                 _yetki.Id = _id;
@@ -179,7 +179,7 @@ function DB_Kullanici() {
             });
     }
 
-    function f_db_kullanici_yetki_guncelle(kul_id, _yetki) {
+    function f_kullanici_yetki_guncelle(kul_id, _yetki) {
         return result.dbQ.Q.all([
             result.dbQ.hset(result.kp.yetki.tablo, _yetki.Id, JSON.stringify(_yetki)),
             result.dbQ.sadd(result.kp.kullanici.ssetYetkileri(kul_id), _yetki.Id)
@@ -189,7 +189,7 @@ function DB_Kullanici() {
         });
     }
 
-    function f_db_kullanici_yetki_sil(kul_id, yetki_id) {
+    function f_kullanici_yetki_sil(kul_id, yetki_id) {
         return result.dbQ.srem(result.kp.kullanici.ssetYetkileri(kul_id), yetki_id);
     }
 
@@ -221,7 +221,7 @@ function DB_Kullanici() {
      * @param aktif
      * @returns {*}
      */
-    function f_db_kullanici_tumu(aktif) {
+    function f_kullanici_tumu(aktif) {
         if (aktif) {
             return f_aktif_kullanici_idleri()
                 .then(function (_idler) {
@@ -246,7 +246,7 @@ function DB_Kullanici() {
      * @param _idler
      * @returns {*}
      */
-    function f_db_kullanici_tumu_idye_gore(_idler) {
+    function f_kullanici_tumu_idye_gore(_idler) {
         return result.dbQ.hmget_json_parse(result.kp.kullanici.tablo, _idler)
             .then(function (_aktif) {
                 return _aktif;
@@ -263,7 +263,7 @@ function DB_Kullanici() {
      * @param {OptionsKullanici=} _opts, Kullanıcı bilgilerinin detaylarını çekip çekmemek için ayarları içerir
      * @returns {Promise}
      */
-    function f_db_kullanici_id(_kul_id, _opts) {
+    function f_kullanici_id(_kul_id, _opts) {
         // _kul_id yoksa null dön
         if (!_kul_id) {
             return null;
@@ -290,11 +290,11 @@ function DB_Kullanici() {
                 : null,
             // 3
             opts.bTahtalari
-                ? (opts.Tahtalari.arrTahta_id != null ? opts.Tahtalari.arrTahta_id : f_db_kullanici_tahta_idleri(kul_id))
+                ? (opts.Tahtalari.arrTahta_id != null ? opts.Tahtalari.arrTahta_id : f_kullanici_tahta_idleri(kul_id))
                 : null,
             //4
             opts.bOturumDurumu
-                ? f_db_kullanici_oturum_durumu(parseInt(kul_id))
+                ? f_kullanici_oturum_durumu(parseInt(kul_id))
                 : 1
         ].allX()
             .then(function (_dbReplies) {
@@ -323,7 +323,7 @@ function DB_Kullanici() {
                 }
 
                 return arrKullaniciTahtaIdleri
-                    .mapX(null, f_db_kullanici_tahtalari, opts.Tahtalari).allX()
+                    .mapX(null, f_kullanici_tahtalari, opts.Tahtalari).allX()
                     .then(function (_arrTahtalari) {
                         kullanici.Tahtalari = _arrTahtalari;
 
@@ -342,7 +342,7 @@ function DB_Kullanici() {
      * @param {integer} _tahta_id
      * @param {OptionsUye=} _opts
      */
-    function f_db_uye_id(_uye_id, _tahta_id, _opts) {
+    function f_uye_id(_uye_id, _tahta_id, _opts) {
         // 1. Temel Tahta Üye bilgileri
         // 2. Tahtadaki rolleri
 
@@ -419,12 +419,12 @@ function DB_Kullanici() {
      * @param {Integer[]} _arr_kullanici_idleri
      * @returns {*}
      */
-    function f_db_kullanici_idler(_arr_kullanici_idleri) {
-        return _arr_kullanici_idleri.mapX(null, f_db_kullanici_id).allX();
+    function f_kullanici_idler(_arr_kullanici_idleri) {
+        return _arr_kullanici_idleri.mapX(null, f_kullanici_id).allX();
     }
 
 
-    function f_db_kullanici_refresh_token_ekle(_kul_id, _token) {
+    function f_kullanici_refresh_token_ekle(_kul_id, _token) {
         return result.dbQ.hset(result.kp.kullanici.hsetGPlusToken, _kul_id, JSON.stringify(_token));
 
         1 | 4587456445
@@ -466,9 +466,9 @@ function DB_Kullanici() {
 
     //region db_kullanici dönen fonksiyonlar
 
-    function f_db_kullanici_LOCAL_eposta(_eposta) {
+    function f_kullanici_LOCAL_eposta(_eposta) {
         return result.dbQ.hget(result.kp.kullanici.hsetLocalKullanicilari, _eposta)
-            .then(f_db_kullanici_id);
+            .then(f_kullanici_id);
     }
 
     /**
@@ -476,20 +476,20 @@ function DB_Kullanici() {
      * @param _principleName {String} - Kullanıcı adı olarak e-posta adresini kullanıyoruz.
      * @returns {Promise}
      */
-    function f_db_kullanici_AD_principleName(_principleName) {
-        return f_AD_to_db_kullanici_id(_principleName).then(f_db_kullanici_id);
+    function f_kullanici_AD_principleName(_principleName) {
+        return f_AD_to_db_kullanici_id(_principleName).then(f_kullanici_id);
     }
 
-    function f_db_kullanici_FACEBOOK_id(fb_id) {
-        return f_FACEBOOK_id_to_db_kullanici_id(fb_id).then(f_db_kullanici_id);
+    function f_kullanici_FACEBOOK_id(fb_id) {
+        return f_FACEBOOK_id_to_db_kullanici_id(fb_id).then(f_kullanici_id);
     }
 
-    function f_db_kullanici_GPLUS_id(gp_id) {
-        return f_GPLUS_id_to_db_kullanici_id(gp_id).then(f_db_kullanici_id);
+    function f_kullanici_GPLUS_id(gp_id) {
+        return f_GPLUS_id_to_db_kullanici_id(gp_id).then(f_kullanici_id);
     }
 
-    function f_db_kullanici_TWITTER_id(tw_id) {
-        return f_TWITTER_id_to_db_kullanici_id(tw_id).then(f_db_kullanici_id);
+    function f_kullanici_TWITTER_id(tw_id) {
+        return f_TWITTER_id_to_db_kullanici_id(tw_id).then(f_kullanici_id);
     }
 
 
@@ -503,26 +503,26 @@ function DB_Kullanici() {
      * @param kullanici
      * @returns {*}
      */
-    function f_db_kullanici_kontrol(kullanici) {
+    function f_kullanici_kontrol(kullanici) {
         var defer = result.dbQ.Q.defer();
         console.log("Kullanici: " + JSON.stringify(kullanici.Providers));
         if (Object.keys(kullanici.Providers).length) {
             var provider_id;
             if (kullanici.Providers.FB) {
                 provider_id = kullanici.Providers.FB.id;
-                return f_db_kullanici_FACEBOOK_id(provider_id);
+                return f_kullanici_FACEBOOK_id(provider_id);
             }
             else if (kullanici.Providers.TW) {
                 provider_id = kullanici.Providers.TW.id;
-                return f_db_kullanici_TWITTER_id(provider_id);
+                return f_kullanici_TWITTER_id(provider_id);
             }
             else if (kullanici.Providers.GP) {
                 provider_id = kullanici.Providers.GP.id;
-                return f_db_kullanici_GPLUS_id(provider_id);
+                return f_kullanici_GPLUS_id(provider_id);
             }
             else if (kullanici.Providers.AD) {
                 provider_id = kullanici.Providers.AD.userPrincipalName;
-                return f_db_kullanici_LOCAL_eposta(provider_id);
+                return f_kullanici_LOCAL_eposta(provider_id);
             }
         } else {
             defer.reject(null);
@@ -530,7 +530,7 @@ function DB_Kullanici() {
         return defer.promise;
     }
 
-    function f_db_kullanici_ekle(kullanici) {
+    function f_kullanici_ekle(kullanici) {
 
         return result.dbQ.incr(result.kp.kullanici.idx)
             .then(function (_id) {
@@ -568,7 +568,7 @@ function DB_Kullanici() {
                         : null
                 ].allX().then(function () {
 
-                    return f_db_kullanici_id(kullanici.Id).then(function (_dbKullanici) {
+                    return f_kullanici_id(kullanici.Id).then(function (_dbKullanici) {
                         //kullanıcı işlemleri için tetikle(elastic ekle..vb)
                         emitter.emit(schema.SABIT.OLAY.KULLANICI_EKLENDI, kullanici);
                         return _dbKullanici;
@@ -578,7 +578,7 @@ function DB_Kullanici() {
             });
     }
 
-    function f_db_kullanici_guncelle(kullanici) {
+    function f_kullanici_guncelle(kullanici) {
         delete kullanici.AnahtarKelimeler;
 
         return [
@@ -598,11 +598,11 @@ function DB_Kullanici() {
         ].allX().then(function () {
 
             emitter.emit(schema.SABIT.OLAY.KULLANICI_GUNCELLENDI, kullanici);
-            return f_db_kullanici_id(kullanici.Id);
+            return f_kullanici_id(kullanici.Id);
         });
     }
 
-    function f_db_kullanici_sil(kullanici_id) {
+    function f_kullanici_sil(kullanici_id) {
         if (kullanici_id) {
 
             emitter.emit(schema.SABIT.OLAY.KULLANICI_SILINDI, kullanici_id);
@@ -620,25 +620,25 @@ function DB_Kullanici() {
      * @class DBKullanici
      */
     result = {
-        f_db_kullanici_oturum_durumu: f_db_kullanici_oturum_durumu,
-        f_db_kullanici_oturum_durumu_ekle: f_db_kullanici_oturum_durumu_ekle,
-        f_db_kullanici_kontrol: f_db_kullanici_kontrol,
-        f_db_kullanici_profil: f_db_kullanici_profil,
-        f_db_kullanici_profil_ekle: f_db_kullanici_profil_ekle,
-        f_db_kullanici_tahta_idleri: f_db_kullanici_tahta_idleri,
-        f_db_kullanici_tahtalari: f_db_kullanici_tahtalari,
-        f_db_kullanici_bolge_tumu: f_db_kullanici_bolge_tumu,
-        f_db_kullanici_bolge_ekle: f_db_kullanici_bolge_ekle,
-        f_db_kullanici_bolge_sil: f_db_kullanici_bolge_sil,
-        f_db_kullanici_yetki_tumu: f_db_kullanici_yetki_tumu,
-        f_db_kullanici_yetki_ekle: f_db_kullanici_yetki_ekle,
-        f_db_kullanici_yetki_guncelle: f_db_kullanici_yetki_guncelle,
-        f_db_kullanici_yetki_sil: f_db_kullanici_yetki_sil,
-        f_db_kullanici_tumu: f_db_kullanici_tumu,
-        f_db_kullanici_tumu_idye_gore: f_db_kullanici_tumu_idye_gore,
-        f_db_kullanici_idler: f_db_kullanici_idler,
-        f_db_kullanici_id: f_db_kullanici_id,
-        f_db_uye_id: f_db_uye_id,
+        f_db_kullanici_oturum_durumu: f_kullanici_oturum_durumu,
+        f_db_kullanici_oturum_durumu_ekle: f_kullanici_oturum_durumu_ekle,
+        f_db_kullanici_kontrol: f_kullanici_kontrol,
+        f_db_kullanici_profil: f_kullanici_profil,
+        f_db_kullanici_profil_ekle: f_kullanici_profil_ekle,
+        f_db_kullanici_tahta_idleri: f_kullanici_tahta_idleri,
+        f_db_kullanici_tahtalari: f_kullanici_tahtalari,
+        f_db_kullanici_bolge_tumu: f_kullanici_bolge_tumu,
+        f_db_kullanici_bolge_ekle: f_kullanici_bolge_ekle,
+        f_db_kullanici_bolge_sil: f_kullanici_bolge_sil,
+        f_db_kullanici_yetki_tumu: f_kullanici_yetki_tumu,
+        f_db_kullanici_yetki_ekle: f_kullanici_yetki_ekle,
+        f_db_kullanici_yetki_guncelle: f_kullanici_yetki_guncelle,
+        f_db_kullanici_yetki_sil: f_kullanici_yetki_sil,
+        f_db_kullanici_tumu: f_kullanici_tumu,
+        f_db_kullanici_tumu_idye_gore: f_kullanici_tumu_idye_gore,
+        f_db_kullanici_idler: f_kullanici_idler,
+        f_db_kullanici_id: f_kullanici_id,
+        f_db_uye_id: f_uye_id,
         // kullanıcı_id from provider_id
         f_eposta_to_db_kullanici_id: f_eposta_to_db_kullanici_id,
         f_AD_to_db_kullanici_id: f_AD_to_db_kullanici_id,
@@ -646,14 +646,14 @@ function DB_Kullanici() {
         f_TWITTER_id_to_db_kullanici_id: f_TWITTER_id_to_db_kullanici_id,
         f_GPLUS_id_to_db_kullanici_id: f_GPLUS_id_to_db_kullanici_id,
         // kullanıcı from provider
-        f_db_kullanici_LOCAL_eposta: f_db_kullanici_LOCAL_eposta,
-        f_db_kullanici_AD_principleName: f_db_kullanici_AD_principleName,
-        f_db_kullanici_FACEBOOK_id: f_db_kullanici_FACEBOOK_id,
-        f_db_kullanici_TWITTER_id: f_db_kullanici_TWITTER_id,
-        f_db_kullanici_GPLUS_id: f_db_kullanici_GPLUS_id,
-        f_db_kullanici_ekle: f_db_kullanici_ekle,
-        f_db_kullanici_guncelle: f_db_kullanici_guncelle,
-        f_db_kullanici_sil: f_db_kullanici_sil,
+        f_db_kullanici_LOCAL_eposta: f_kullanici_LOCAL_eposta,
+        f_db_kullanici_AD_principleName: f_kullanici_AD_principleName,
+        f_db_kullanici_FACEBOOK_id: f_kullanici_FACEBOOK_id,
+        f_db_kullanici_TWITTER_id: f_kullanici_TWITTER_id,
+        f_db_kullanici_GPLUS_id: f_kullanici_GPLUS_id,
+        f_db_kullanici_ekle: f_kullanici_ekle,
+        f_db_kullanici_guncelle: f_kullanici_guncelle,
+        f_db_kullanici_sil: f_kullanici_sil,
         /**
          *
          * @param opts - Ezilecek değerleri taşıyan nesne

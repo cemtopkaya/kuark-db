@@ -21,7 +21,7 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_kalem_indeksli_idler(_tahta_id) {
+    function f_kalem_indeksli_idler(_tahta_id) {
         console.log("f_db_kalem_indeksli_idler");
 
         var db_tahta = require('./db_tahta');
@@ -70,11 +70,11 @@ function DB_Kalem() {
      * @param _ihale_id
      * @returns {*}
      */
-    function f_db_kalem_indeksli_idler_ihaleye_bagli(_tahta_id, _ihale_id) {
+    function f_kalem_indeksli_idler_ihaleye_bagli(_tahta_id, _ihale_id) {
         var db_ihale = require('./db_ihale');
 
         return result.dbQ.Q.all([
-                f_db_kalem_indeksli_idler(_tahta_id), //anahtar kelimelerin geçtiği kalemler
+                f_kalem_indeksli_idler(_tahta_id), //anahtar kelimelerin geçtiği kalemler
                 db_ihale.f_db_ihale_aktif_kalem_idler(_ihale_id, _tahta_id)//ihalenin kalemleri
             ])
             .then(function (_ress) {
@@ -100,7 +100,7 @@ function DB_Kalem() {
      * @param {UrlQuery} _arama
      * @returns {*}
      */
-    function f_db_kalem_indeksliler_by_page(_tahta_id, _ihale_id, _arama) {
+    function f_kalem_indeksliler_by_page(_tahta_id, _ihale_id, _arama) {
         l.info("f_db_kalem_indeksliler_by_page");
         var baslangic = 0,
             bitis = 10,
@@ -116,7 +116,7 @@ function DB_Kalem() {
         sonuc.ToplamKayitSayisi = 0;
         sonuc.Data = [];
 
-        f_db_kalem_indeksli_idler_ihaleye_bagli(_tahta_id, _ihale_id)
+        f_kalem_indeksli_idler_ihaleye_bagli(_tahta_id, _ihale_id)
             .then(function (_kalem_idler) {
                 console.log("_kalem_idler>" + _kalem_idler);
                 console.log(" _kalem_idler.length>" + _kalem_idler.length);
@@ -141,7 +141,7 @@ function DB_Kalem() {
                             ]).then(function (_ress) {
 
                                 if (_ress[0] && _ress[0].length > 0) {
-                                    f_db_kalem_id(_ress[0], _tahta_id)
+                                    f_kalem_id(_ress[0], _tahta_id)
                                         .then(function (_data) {
                                             sonuc.Data = _data;
                                             defer.resolve(sonuc);
@@ -166,7 +166,7 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_kalem_ihalesi(_kalem_id, _tahta_id) {
+    function f_kalem_ihalesi(_kalem_id, _tahta_id) {
         return result.dbQ.hget(result.kp.kalem.hsetIhaleleri, _kalem_id)
             .then(function (_ihale_id) {
                 /** @type {DBIhale} */
@@ -186,7 +186,7 @@ function DB_Kalem() {
 
     //region TAKİPTEKİ KALEMLER
 
-    function f_db_kalem_takipte_mi(_kalem, _tahta_id) {
+    function f_kalem_takipte_mi(_kalem, _tahta_id) {
         return result.dbQ.sismember(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem.Id)
             .then(function (_iTakip) {
                 _kalem.Takip = _iTakip == 1;
@@ -199,14 +199,14 @@ function DB_Kalem() {
      * @param _tahta_id
      * @param _kalemler
      */
-    function f_db_kalem_takip_kontrol(_tahta_id, _kalemler) {
+    function f_kalem_takip_kontrol(_tahta_id, _kalemler) {
 
         if (Array.isArray(_kalemler) && _kalemler.length > 0) {
 
-            return _kalemler.mapX(null, f_db_kalem_takipte_mi, _tahta_id).allX();
+            return _kalemler.mapX(null, f_kalem_takipte_mi, _tahta_id).allX();
 
         } else {
-            return f_db_kalem_takipte_mi(_kalemler, _tahta_id);
+            return f_kalem_takipte_mi(_kalemler, _tahta_id);
         }
     }
 
@@ -216,7 +216,7 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    function f_db_tahta_kalem_takip_sil(_tahta_id, _kalem_id) {
+    function f_tahta_kalem_takip_sil(_tahta_id, _kalem_id) {
         return result.dbQ.srem(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem_id);
     }
 
@@ -226,7 +226,7 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    function f_db_tahta_kalem_takip_ekle(_tahta_id, _kalem_id) {
+    function f_tahta_kalem_takip_ekle(_tahta_id, _kalem_id) {
         //kalem takip edilecek olarak belirlendiğinde ihalesi de takip edilecek olarak ayarlamalıyız
         return result.dbQ.sadd(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem_id)
             .then(function () {
@@ -242,11 +242,11 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_kalem_takip_tumu(_tahta_id) {
-        return f_db_kalem_takip_idler(_tahta_id)
+    function f_tahta_kalem_takip_tumu(_tahta_id) {
+        return f_kalem_takip_idler(_tahta_id)
             .then(function (_kalem_idler) {
                 if (_kalem_idler && _kalem_idler.length > 0) {
-                    return f_db_kalem_id(_kalem_idler, _tahta_id);
+                    return f_kalem_id(_kalem_idler, _tahta_id);
                 } else {
                     return [];
                 }
@@ -258,14 +258,14 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_kalem_takip_idler(_tahta_id) {
+    function f_kalem_takip_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id));
     }
 
-    function f_db_kalem_takip_toplami(_tahta_id) {
+    function f_kalem_takip_toplami(_tahta_id) {
         return result.dbQ.Q.all([
-            f_db_tahta_kalem_idler_aktif(_tahta_id),
-            f_db_kalem_takip_idler(_tahta_id)
+            f_tahta_kalem_idler_aktif(_tahta_id),
+            f_kalem_takip_idler(_tahta_id)
 
         ]).then(function (_ress) {
 
@@ -288,7 +288,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id
      * @param {integer} _kalem_id
      */
-    function f_db_kalem_gizlenen_sil(_tahta_id, _kalem_id) {
+    function f_kalem_gizlenen_sil(_tahta_id, _kalem_id) {
 
         return result.dbQ.srem(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id), _kalem_id)
             .then(function () {
@@ -306,7 +306,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id
      * @param {integer} _kalem_id
      */
-    function f_db_kalem_gizlenen_ekle(_tahta_id, _kalem_id) {
+    function f_kalem_gizlenen_ekle(_tahta_id, _kalem_id) {
         return result.dbQ.sadd(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id), _kalem_id)
             .then(function () {
                 //kalemin ihalesini buluyoruz ki ihale temp setinde kayıt varsa onları da silelim
@@ -323,11 +323,11 @@ function DB_Kalem() {
      * Kullanıcı tahtada görmek istemediği kalem listesini dönüyoruz.
      * @param {integer} _tahta_id
      */
-    function f_db_kalem_gizlenen_tumu(_tahta_id) {
-        return f_db_kalem_gizlenen_idler(_tahta_id)
+    function f_kalem_gizlenen_tumu(_tahta_id) {
+        return f_kalem_gizlenen_idler(_tahta_id)
             .then(function (_kalem_idler) {
                 if (_kalem_idler && _kalem_idler.length > 0) {
-                    return f_db_kalem_id(_kalem_idler, _tahta_id);
+                    return f_kalem_id(_kalem_idler, _tahta_id);
                 } else {
                     return [];
                 }
@@ -339,17 +339,17 @@ function DB_Kalem() {
      * @param _tahta_id
      * @returns {*}
      */
-    function f_db_kalem_gizlenen_toplami(_tahta_id) {
+    function f_kalem_gizlenen_toplami(_tahta_id) {
 
         return result.dbQ.exists(result.kp.temp.ssetTahtaKalemTumu(_tahta_id))
             .then(function (_iExist) {
                 return (_iExist
                     ? 1//temp var
-                    : f_db_tahta_kalem_idler_aktif(_tahta_id));//temp oluşturmak için kalem idlerini çek )
+                    : f_tahta_kalem_idler_aktif(_tahta_id));//temp oluşturmak için kalem idlerini çek )
             })
             .then(function () {
                 return result.dbQ.Q.all([
-                    f_db_kalem_gizlenen_idler(_tahta_id),
+                    f_kalem_gizlenen_idler(_tahta_id),
                     result.dbQ.scard(result.kp.temp.ssetTahtaKalemTumu(_tahta_id))
 
                 ]).then(function (_ress) {
@@ -367,7 +367,7 @@ function DB_Kalem() {
 
     }
 
-    function f_db_kalem_gizlenen_idler(_tahta_id) {
+    function f_kalem_gizlenen_idler(_tahta_id) {
         return result.dbQ.smembers(result.kp.tahta.ssetGizlenenKalemleri(_tahta_id));
     }
 
@@ -382,7 +382,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id - Tahta id bilgisi olmak zorunda
      * @returns {*}
      */
-    function f_db_kalem_onay_durumu(_kalem_id, _tahta_id) {
+    function f_kalem_onay_durumu(_kalem_id, _tahta_id) {
 
         var defer = result.dbQ.Q.defer();
 
@@ -425,12 +425,12 @@ function DB_Kalem() {
      * @param {integer} _kalem_id
      * @param {OnayDurumu} _onay_durumu
      */
-    function f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _kalem_id, _onay_durumu) {
+    function f_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _kalem_id, _onay_durumu) {
         var defer = result.dbQ.Q.defer();
 
         if (_onay_durumu && _onay_durumu.Id > 0) {
 
-            f_db_kalem_onay_durumu(_kalem_id, _tahta_id)
+            f_kalem_onay_durumu(_kalem_id, _tahta_id)
                 .then(function (/** @type {OnayDurumu} */ _dbDurum) {
 
                     result.dbQ.Q.all([
@@ -441,8 +441,8 @@ function DB_Kalem() {
                 })
                 .then(function () {
                     //kalemin durumu değiştiğinde elastic tarafını güncellememiz gerekiyor
-                    //bu nedenle önce f_db_kalem_id metodundan kalem bilgisi alıp sonra da tetikleme işlemini yapıyoruz
-                    f_db_kalem_id(_kalem_id, _tahta_id)
+                    //bu nedenle önce f_kalem_id metodundan kalem bilgisi alıp sonra da tetikleme işlemini yapıyoruz
+                    f_kalem_id(_kalem_id, _tahta_id)
                         .then(function (_dbKalem) {
                             emitter.emit(schema.SABIT.OLAY.KALEM_DURUMU_GUNCELLENDI, _dbKalem, _ihale_id, _tahta_id);
 
@@ -466,7 +466,7 @@ function DB_Kalem() {
      * @param {Sayfalama=} _sayfalama
      * @returns {*}
      */
-    function f_db_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama) {
+    function f_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama) {
         var defer = result.dbQ.Q.defer();
 
         var multi = result.rc.multi(),
@@ -516,8 +516,8 @@ function DB_Kalem() {
      * @param {Sayfalama=} _sayfalama
      * @returns {*}
      */
-    function f_db_kalem_teklif_tumu(_tahta_id, _kalem_id, _sayfalama) {
-        return f_db_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama)
+    function f_kalem_teklif_tumu(_tahta_id, _kalem_id, _sayfalama) {
+        return f_kalem_teklif_idleri(_tahta_id, _kalem_id, _sayfalama)
             .then(function (_aktifler) {
                 var sonucAnahtari = result.kp.temp.ssetTahtaKalemTeklifleri(_tahta_id, _kalem_id),
                     sonuc = schema.f_create_default_object(schema.SCHEMA.LAZY_LOADING_RESPONSE);
@@ -562,7 +562,7 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    function f_db_kalem_teklif_kontrol(_tahta_id, _kalem_id) {
+    function f_kalem_teklif_kontrol(_tahta_id, _kalem_id) {
         if (_tahta_id > 0) {
             return result.dbQ.sinter(result.kp.kalem.ssetTeklifleri(_kalem_id), result.kp.tahta.ssetTeklifleri(_tahta_id, true));
         } else {
@@ -579,7 +579,7 @@ function DB_Kalem() {
      * @param {integer} _tahta_id
      * @returns {*}
      */
-    function f_db_tahta_kalem_idler_aktif(_tahta_id) {
+    function f_tahta_kalem_idler_aktif(_tahta_id) {
         var db_ihale = require('./db_ihale'),
             defer = result.dbQ.Q.defer(),
             anahtar = result.kp.temp.ssetTahtaKalem(_tahta_id);
@@ -634,7 +634,7 @@ function DB_Kalem() {
      * @param {OptionsKalem=} _opts
      * @returns {*}
      */
-    function f_db_kalem_id(kalem_id, _tahta_id, _opts) {
+    function f_kalem_id(kalem_id, _tahta_id, _opts) {
         var optsKalem = result.OptionsKalem(_opts);
 
         return (Array.isArray(kalem_id)
@@ -656,7 +656,7 @@ function DB_Kalem() {
                      * @param {OptionsKalem} _optKalemBilgileri
                      * @returns {*}
                      */
-                    var f_KalemBilgileriniCek = function (_kalem, _optKalemBilgileri) {
+                    function f_KalemBilgileriniCek(_kalem, _optKalemBilgileri) {
 
                         if (!_kalem) {
                             return null;
@@ -674,13 +674,13 @@ function DB_Kalem() {
 
                         return result.dbQ.Q.all([
                                 (_optKalemBilgileri.bOnayDurumu && _tahta_id
-                                    ? f_db_kalem_onay_durumu(_kalem.Id, _tahta_id)
+                                    ? f_kalem_onay_durumu(_kalem.Id, _tahta_id)
                                     : {Id: 0}),
                                 (_optKalemBilgileri.bTakiptemi && _tahta_id
                                     ? result.dbQ.sismember(result.kp.tahta.ssetTakiptekiKalemleri(_tahta_id), _kalem.Id)
                                     : 0),
                                 (_optKalemBilgileri.bArrTeklifleri
-                                    ? f_db_kalem_teklif_tumu(_tahta_id, _kalem.Id)
+                                    ? f_kalem_teklif_tumu(_tahta_id, _kalem.Id)
                                     : [])
                             ])
                             .then(function (_ress) {
@@ -699,7 +699,7 @@ function DB_Kalem() {
                             .allX()
                             .then(function (dbKalemBilgilerle) {
 
-                                return f_db_kalem_onay_durumu(kalem_id, _tahta_id)
+                                return f_kalem_onay_durumu(kalem_id, _tahta_id)
                                     .then(function (dbKalemOnayDurumlari) {
 
                                         return dbKalemBilgilerle.map(function (_elm, _idx) {
@@ -726,7 +726,7 @@ function DB_Kalem() {
     //endregion
 
     //region KALEM EKLE-GÜNCELLE-SİL
-    function f_db_kalemleri_ekle(_ihale_id, _ihaleKalemleri, _kul_id) {
+    function f_kalemleri_ekle(_ihale_id, _ihaleKalemleri, _kul_id) {
         return result.dbQ.incrby(result.kp.kalem.idx, _ihaleKalemleri.length)
             .then(function (_sonKalemId) {
                 var ilkKalemId = _sonKalemId - _ihaleKalemleri.length;
@@ -769,7 +769,7 @@ function DB_Kalem() {
      * @param _kul_id
      * @returns {*}
      */
-    function f_db_kalem_ekle(_ihale_id, _kalem, _kul_id) {
+    function f_kalem_ekle(_ihale_id, _kalem, _kul_id) {
 
         return result.dbQ.incr(result.kp.kalem.idx)
             .then(function (_id) {
@@ -792,7 +792,7 @@ function DB_Kalem() {
                             bTakiptemi: false,
                             bOnayDurumu: false
                         };
-                        return f_db_kalem_id(_id, 0, opts);
+                        return f_kalem_id(_id, 0, opts);
                     });
             });
     }
@@ -806,7 +806,7 @@ function DB_Kalem() {
      * @param _kul_id
      * @returns {*}
      */
-    function f_db_kalem_ekle_tahta(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
+    function f_kalem_ekle_tahta(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
 
         var onay_durumu = _es_kalem.OnayDurumu;
 
@@ -830,10 +830,10 @@ function DB_Kalem() {
                     })
                     .then(function () {
                         //onay durumu varsa güncelle yoksa satırı döner
-                        return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
+                        return f_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
                     })
                     .then(function () {
-                        return f_db_kalem_id(_id, _tahta_id);
+                        return f_kalem_id(_id, _tahta_id);
                     });
             })
             .fail(function (_err) {
@@ -852,7 +852,7 @@ function DB_Kalem() {
      * @param _kul_id
      * @returns {*}
      */
-    function f_db_kalem_guncelle(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
+    function f_kalem_guncelle(_tahta_id, _ihale_id, _es_kalem, _db_kalem, _kul_id) {
 
         // region NOTLAR
         /*
@@ -924,7 +924,7 @@ function DB_Kalem() {
                             //örneğin katılıyoruz (2) demişti sadd tahta:401:durum:2 201 setine eklemiştik
                             //sonra gitti itiraz edilecek (3) dedi bu durumda önce gidip katılıyoruz listesinden kaldırıyoruz
                             //srem tahta:401:durum:2 201
-                            return f_db_kalem_onay_durumu(orjinal_kalem_id, _tahta_id)
+                            return f_kalem_onay_durumu(orjinal_kalem_id, _tahta_id)
                                 .then(function (_dbDurum) {
                                     if (_dbDurum != null) {
                                         //eski satıra ait onay durum bilgileri vars siliyoruz
@@ -949,7 +949,7 @@ function DB_Kalem() {
                         })
                         .then(function () {
                             //satırın onay durumlarını düzenle
-                            return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
+                            return f_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu);
                         })
                         .then(function () {
                             //satıra verilen teklifler ile tahtada verilen tekliflerin kesişimini bulup
@@ -972,7 +972,7 @@ function DB_Kalem() {
                                 });
                         })
                         .then(function () {
-                            return f_db_kalem_id(_db_kalem.Id, _tahta_id);
+                            return f_kalem_id(_db_kalem.Id, _tahta_id);
                         });
                 });
         }
@@ -1000,14 +1000,14 @@ function DB_Kalem() {
                     //sonra gitti itiraz edilecek (3) dedi bu durumda önce gidip katılıyoruz listesinden kaldırıyoruz
                     //srem tahta:401:durum:2 201
                     //onay durumu varsa güncelle yoksa satırı döner
-                    return f_db_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu)
+                    return f_kalem_onay_durumu_guncelle(_tahta_id, _ihale_id, _db_kalem.Id, onay_durumu)
                         .then(function () {
-                            return f_db_kalem_id(_db_kalem.Id, _tahta_id);
+                            return f_kalem_id(_db_kalem.Id, _tahta_id);
                         });
                 });
         }
 
-        return f_db_kalem_genel_kontrol(orjinal_kalem_id)
+        return f_kalem_genel_kontrol(orjinal_kalem_id)
             .then(function (_iGenel) {
                 if (_iGenel == 1) {
                     //genel kalem ezilir
@@ -1024,7 +1024,7 @@ function DB_Kalem() {
      * @param _kalem_id
      * @returns {*}
      */
-    function f_db_kalem_genel_kontrol(_kalem_id) {
+    function f_kalem_genel_kontrol(_kalem_id) {
         return result.dbQ.sismember(result.kp.kalem.ssetGenel, _kalem_id);
     }
 
@@ -1039,9 +1039,9 @@ function DB_Kalem() {
      * @param {integer=} _kul_id
      * @returns {*}
      */
-    function f_db_kalem_sil_tahta(_kalem_id, _tahta_id, _ihale_id, _kul_id) {
+    function f_kalem_sil_tahta(_kalem_id, _tahta_id, _ihale_id, _kul_id) {
         if (_kalem_id && _kalem_id > 0) {
-            return f_db_kalem_genel_kontrol(_kalem_id)
+            return f_kalem_genel_kontrol(_kalem_id)
                 .then(function (_iGenel) {
                     if (_iGenel == 1) {
 
@@ -1051,7 +1051,7 @@ function DB_Kalem() {
                     } else {
 
                         //tahtaya ait özel kalem silinebilir
-                        return f_db_kalem_id(_kalem_id, _tahta_id)
+                        return f_kalem_id(_kalem_id, _tahta_id)
                             .then(function (_dbKalem) {
                                 emitter.emit(schema.SABIT.OLAY.KALEM_SILINDI, _dbKalem, _tahta_id, _kul_id);
                                 return result.dbQ.Q.all([
@@ -1086,34 +1086,34 @@ function DB_Kalem() {
      * @class DBKalem
      */
     result = {
-        f_db_kalem_indeksli_idler: f_db_kalem_indeksli_idler,
-        f_db_kalem_indeksli_idler_ihaleye_bagli: f_db_kalem_indeksli_idler_ihaleye_bagli,
-        f_db_kalem_indeksliler_by_page: f_db_kalem_indeksliler_by_page,
-        f_db_kalem_takipte_mi: f_db_kalem_takipte_mi,
-        f_db_kalem_takip_kontrol: f_db_kalem_takip_kontrol,
-        f_db_kalem_takip_idler: f_db_kalem_takip_idler,
-        f_db_kalem_takip_toplami: f_db_kalem_takip_toplami,
-        f_db_tahta_kalem_takip_sil: f_db_tahta_kalem_takip_sil,
-        f_db_tahta_kalem_takip_ekle: f_db_tahta_kalem_takip_ekle,
-        f_db_tahta_kalem_takip_tumu: f_db_tahta_kalem_takip_tumu,
-        f_db_tahta_kalem_idler_aktif: f_db_tahta_kalem_idler_aktif,
-        f_db_kalem_onay_durumu: f_db_kalem_onay_durumu,
-        f_db_kalem_onay_durumu_guncelle: f_db_kalem_onay_durumu_guncelle,
-        f_db_kalem_teklif_tumu: f_db_kalem_teklif_tumu,
-        f_db_kalem_teklif_kontrol: f_db_kalem_teklif_kontrol,
-        f_db_kalem_id: f_db_kalem_id,
-        f_db_kalem_ekle: f_db_kalem_ekle,
-        f_db_kalemleri_ekle: f_db_kalemleri_ekle,
-        f_db_kalem_ekle_tahta: f_db_kalem_ekle_tahta,
-        f_db_kalem_guncelle: f_db_kalem_guncelle,
-        f_db_kalem_genel_kontrol: f_db_kalem_genel_kontrol,
-        f_db_kalem_sil_tahta: f_db_kalem_sil_tahta,
-        f_db_kalem_gizlenen_ekle: f_db_kalem_gizlenen_ekle,
-        f_db_kalem_gizlenen_sil: f_db_kalem_gizlenen_sil,
-        f_db_kalem_gizlenen_tumu: f_db_kalem_gizlenen_tumu,
-        f_db_kalem_gizlenen_idler: f_db_kalem_gizlenen_idler,
-        f_db_kalem_gizlenen_toplami: f_db_kalem_gizlenen_toplami,
-        f_db_kalem_ihalesi: f_db_kalem_ihalesi,
+        f_db_kalem_indeksli_idler: f_kalem_indeksli_idler,
+        f_db_kalem_indeksli_idler_ihaleye_bagli: f_kalem_indeksli_idler_ihaleye_bagli,
+        f_db_kalem_indeksliler_by_page: f_kalem_indeksliler_by_page,
+        f_db_kalem_takipte_mi: f_kalem_takipte_mi,
+        f_db_kalem_takip_kontrol: f_kalem_takip_kontrol,
+        f_db_kalem_takip_idler: f_kalem_takip_idler,
+        f_db_kalem_takip_toplami: f_kalem_takip_toplami,
+        f_db_tahta_kalem_takip_sil: f_tahta_kalem_takip_sil,
+        f_db_tahta_kalem_takip_ekle: f_tahta_kalem_takip_ekle,
+        f_db_tahta_kalem_takip_tumu: f_tahta_kalem_takip_tumu,
+        f_db_tahta_kalem_idler_aktif: f_tahta_kalem_idler_aktif,
+        f_db_kalem_onay_durumu: f_kalem_onay_durumu,
+        f_db_kalem_onay_durumu_guncelle: f_kalem_onay_durumu_guncelle,
+        f_db_kalem_teklif_tumu: f_kalem_teklif_tumu,
+        f_db_kalem_teklif_kontrol: f_kalem_teklif_kontrol,
+        f_db_kalem_id: f_kalem_id,
+        f_db_kalem_ekle: f_kalem_ekle,
+        f_db_kalemleri_ekle: f_kalemleri_ekle,
+        f_db_kalem_ekle_tahta: f_kalem_ekle_tahta,
+        f_db_kalem_guncelle: f_kalem_guncelle,
+        f_db_kalem_genel_kontrol: f_kalem_genel_kontrol,
+        f_db_kalem_sil_tahta: f_kalem_sil_tahta,
+        f_db_kalem_gizlenen_ekle: f_kalem_gizlenen_ekle,
+        f_db_kalem_gizlenen_sil: f_kalem_gizlenen_sil,
+        f_db_kalem_gizlenen_tumu: f_kalem_gizlenen_tumu,
+        f_db_kalem_gizlenen_idler: f_kalem_gizlenen_idler,
+        f_db_kalem_gizlenen_toplami: f_kalem_gizlenen_toplami,
+        f_db_kalem_ihalesi: f_kalem_ihalesi,
         /**
          *
          * @param opts - Ezilecek değerleri taşıyan nesne
