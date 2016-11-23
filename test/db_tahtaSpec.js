@@ -4,7 +4,7 @@ var db = require("../src/index")(),
     assert = require('chai').assert,
     schema = require("kuark-schema"),
     extension = require('kuark-extensions'),
-    uuid = require('node-uuid'),
+    uuid = require('uuid'),
     l = extension.winstonConfig;
 
 describe("DB Tahta İşlemleri", function () {
