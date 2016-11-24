@@ -6,7 +6,7 @@ var db = require("../src/index")(),
     assert = chai.assert,
     schema = require("kuark-schema"),
     extensions = require('kuark-extensions'),
-    uuid = require('node-uuid'),
+    uuid = require('uuid'),
     l = extensions.winstonConfig;
 
 
